@@ -1,0 +1,32 @@
+{
+    "name": "renderjsvm",
+    "version": "1.0.0",
+    "description": "Rendering engine for handling DOM updates",
+    "main": "lib/app.ts",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "build": "tsc --sourcemap  --outDir ./dist --rootDir ./lib",
+        "watch": "tsc -w --sourcemap  --outDir ./dist --rootDir ./lib"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/gokit/renderjsvm.git"
+    },
+    "plugins": [
+        "jsfmt"
+    ],
+    "author": "",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/gokit/renderjsvm/issues"
+    },
+    "homepage": "https://github.com/gokit/renderjsvm#readme",
+    "devDependencies": {
+        "awesome-typescript-loader": "^5.2.1",
+        "source-map-loader": "^0.2.4",
+        "ts-loader": "^5.3.3",
+        "typescript": "^3.4.1",
+        "webpack": "^4.29.6",
+        "webpack-cli": "^3.3.0"
+    }
+}
