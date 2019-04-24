@@ -9,7 +9,7 @@ not as performant or somewhat impossible due to the nature of whatever language 
 
 I think by creating a simple interface library like this, developers can add whatever features 
 and methods desired using WebVM, which allows them to have a consistent means of interacting both 
-with DOM nodes, diffing and event managmenet.
+with DOM nodes, diffing and event management.
 
 WebVM goal is to be the sit in library that any project can include for this purpose, I plan to ensure
 it provides the following:
@@ -27,7 +27,7 @@ execute:
 npm run ts-build
 ```
 
-WebVM provides a two commands with npm script that will use `browserify` to create a single bundle file suitable for use
+WebVM provides two commands with npm script that will use `browserify` to create a single bundle file suitable for use
 in a browser, using any of the two commands will allow you dropped said file into the web-browser with a `<script>` tag.
 
 ```bash
