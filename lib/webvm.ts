@@ -5,9 +5,6 @@ import * as patch from './patch';
 import * as utils from './utils';
 import * as exts from './extensions';
 
-
-console.log("Hello RenderJSVM!");
-
 /* DOMMount exists to provide a focus DOM operation on a giving underline static node,
 *  which will be used for mounting an ever updating series of changes, nodes and html elements.
 * It acts as the bridge for event management, propagation and update, just like in react, the mount
@@ -20,6 +17,7 @@ console.log("Hello RenderJSVM!");
 export class DOMMount{
 	public readonly doc: Document;
 	public readonly mountNode: Element;
+	
 	
 	constructor(document: Document,target: string|Element){
 		this.doc = document;

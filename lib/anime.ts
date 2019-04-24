@@ -1,3 +1,5 @@
+import * as rafPolyfill from './raf-polyfill';
+
 // FrameRequestCallback defines a callback interface.
 export interface FrameRequestCallback {
 	(time: number): void;
@@ -13,16 +15,18 @@ export interface FrameRequestCallback {
 // Start AnimationQueue.bind/AnimationQueue.unbind.
 //
 export class AnimationQueue {
-	private readonly frames: Array<AFrame>;
+	public readonly frames: Array<AFrame>;
 	private skip: boolean;
 	private binded: boolean;
 	private requestAnimationID:number;
+	private rafProvider: rafPolyfill.RAF;
 	
 	constructor(){
 		this.skip = false;
 		this.binded = false;
 		this.requestAnimationID = -1;
 		this.frames = new Array<AFrame>();
+		this.rafProvider = rafPolyfill.GetRAF();
 	}
 	
 	// new returns a new Frame from queue.
@@ -35,6 +39,7 @@ export class AnimationQueue {
 	// Add adds provided frame into queue.
 	add(f: AFrame) {
 		f.queueIndex = this.frames.length;
+		f.queue = this;
 		this.frames.push(f);
 	}
 	
@@ -52,13 +57,13 @@ export class AnimationQueue {
 			return null;
 		}
 		
-		window.cancelAnimationFrame(this.requestAnimationID);
+		this.rafProvider.cancelAnimationFrame(this.requestAnimationID);
 	}
 	
 	bind(){
 		if (this.binded) return null;
 		const bindCycle = this.cycle.bind(this);
-		this.requestAnimationID = window.requestAnimationFrame(bindCycle);
+		this.requestAnimationID = this.rafProvider.requestAnimationFrame(bindCycle, null);
 		this.binded = true;
 	}
 	
@@ -77,29 +82,15 @@ export class AnimationQueue {
 		
 		this.bind();
 	}
-	
-	remove(f: AFrame) {
-		if (this.frames.length == 0) {
-			return null;
-		}
-		
-		const total = this.frames.length;
-		if(total == 1){
-			this.frames.pop();
-			return null;
-		}
-		
-		this.frames[f.queueIndex] = this.frames[total -1];
-		this.frames.length = total - 1;
-	}
 }
 
 // AFrame provides sets of callbacks sets which will be executed at the same time
 // by the underline queue.
 export class AFrame {
 	public queueIndex: number;
+	public queue?: AnimationQueue;
+	
 	private skip: boolean;
-	private queue: AnimationQueue;
 	private readonly callbacks: Array<FrameRequestCallback>;
 	
 	constructor(index: number, queue: AnimationQueue){
@@ -132,7 +123,30 @@ export class AFrame {
 	// stop removes giving frame from it's underline queue.
 	stop(){
 		this.pause();
-		this.queue.remove(this);
+		
+		if(this.queueIndex === -1){
+			return null;
+		}
+		
+		if (this.queue!.frames.length == 0) {
+			this.queue = undefined;
+			this.queueIndex = -1;
+			return null;
+		}
+		
+		const total = this.queue!.frames.length;
+		if(total == 1){
+			this.queue!.frames.pop();
+			this.queue = undefined;
+			this.queueIndex = -1;
+			return null;
+		}
+		
+		this.queue!.frames[this.queueIndex] = this.queue!.frames[total -1];
+		this.queue!.frames.length = total - 1;
+		
+		this.queue = undefined;
+		this.queueIndex = -1;
 	}
 	
 	animate(ts: number){

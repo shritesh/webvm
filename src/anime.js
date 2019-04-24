@@ -1,11 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const rafPolyfill = require("./raf-polyfill");
 class AnimationQueue {
     constructor() {
         this.skip = false;
         this.binded = false;
         this.requestAnimationID = -1;
         this.frames = new Array();
+        this.rafProvider = rafPolyfill.GetRAF();
     }
     new() {
         const newFrame = new AFrame(this.frames.length, this);
@@ -14,6 +16,7 @@ class AnimationQueue {
     }
     add(f) {
         f.queueIndex = this.frames.length;
+        f.queue = this;
         this.frames.push(f);
     }
     resume() {
@@ -26,13 +29,13 @@ class AnimationQueue {
         if (!this.binded) {
             return null;
         }
-        window.cancelAnimationFrame(this.requestAnimationID);
+        this.rafProvider.cancelAnimationFrame(this.requestAnimationID);
     }
     bind() {
         if (this.binded)
             return null;
         const bindCycle = this.cycle.bind(this);
-        this.requestAnimationID = window.requestAnimationFrame(bindCycle);
+        this.requestAnimationID = this.rafProvider.requestAnimationFrame(bindCycle, null);
         this.binded = true;
     }
     cycle(ms) {
@@ -46,18 +49,6 @@ class AnimationQueue {
             }
         });
         this.bind();
-    }
-    remove(f) {
-        if (this.frames.length == 0) {
-            return null;
-        }
-        const total = this.frames.length;
-        if (total == 1) {
-            this.frames.pop();
-            return null;
-        }
-        this.frames[f.queueIndex] = this.frames[total - 1];
-        this.frames.length = total - 1;
     }
 }
 exports.AnimationQueue = AnimationQueue;
@@ -82,7 +73,25 @@ class AFrame {
     }
     stop() {
         this.pause();
-        this.queue.remove(this);
+        if (this.queueIndex === -1) {
+            return null;
+        }
+        if (this.queue.frames.length == 0) {
+            this.queue = undefined;
+            this.queueIndex = -1;
+            return null;
+        }
+        const total = this.queue.frames.length;
+        if (total == 1) {
+            this.queue.frames.pop();
+            this.queue = undefined;
+            this.queueIndex = -1;
+            return null;
+        }
+        this.queue.frames[this.queueIndex] = this.queue.frames[total - 1];
+        this.queue.frames.length = total - 1;
+        this.queue = undefined;
+        this.queueIndex = -1;
     }
     animate(ts) {
         for (let index in this.callbacks) {

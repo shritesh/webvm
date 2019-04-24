@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const _ = require("lodash");
-console.log("Hello RenderJSVM!");
 class DOMMount {
     constructor(document, target) {
         this.doc = document;
