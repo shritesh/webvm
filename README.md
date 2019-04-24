@@ -46,3 +46,10 @@ Or
 ```bash
 npm run dist-minified
 ```
+
+## Structure
+
+All typescript work is being done in the [lib](./lib) directory, which then have their equivalent javascript versions
+compiled into the [src](./src) directory. This allows anyone to pickup these files individually as they see fit. 
+
+With the build scripts, a single version can be generated into the [dist](./dist) directly for the browser.
