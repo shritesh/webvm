@@ -1,16 +1,51 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.raf = window.requestAnimationFrame
-    || window.webkitRequestAnimationFrame
-    || function (cb) { return setTimeout(cb, 16); };
 class AnimationQueue {
     constructor() {
+        this.skip = false;
+        this.binded = false;
+        this.requestAnimationID = -1;
         this.frames = new Array();
     }
     new() {
         const newFrame = new AFrame(this.frames.length, this);
         this.frames.push(newFrame);
         return newFrame;
+    }
+    add(f) {
+        f.queueIndex = this.frames.length;
+        this.frames.push(f);
+    }
+    resume() {
+        this.skip = false;
+    }
+    pause() {
+        this.skip = true;
+    }
+    unbind() {
+        if (!this.binded) {
+            return null;
+        }
+        window.cancelAnimationFrame(this.requestAnimationID);
+    }
+    bind() {
+        if (this.binded)
+            return null;
+        const bindCycle = this.cycle.bind(this);
+        this.requestAnimationID = window.requestAnimationFrame(bindCycle);
+        this.binded = true;
+    }
+    cycle(ms) {
+        if (this.frames.length === 0) {
+            this.binded = false;
+            return;
+        }
+        this.frames.forEach(function (f) {
+            if (!f.paused()) {
+                f.animate(ms);
+            }
+        });
+        this.bind();
     }
     remove(f) {
         if (this.frames.length == 0) {
@@ -38,6 +73,9 @@ class AFrame {
     }
     clear() {
         this.callbacks.length = 0;
+    }
+    paused() {
+        return this.skip;
     }
     pause() {
         this.skip = true;
