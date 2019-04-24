@@ -50,6 +50,7 @@
         "@types/node": "^11.13.5",
         "@types/react": "^16.8.13",
         "@types/react-dom": "^16.8.4",
+        "extend": "^2.0.2",
         "preact": "^8.4.2"
     }
 }
