@@ -6,7 +6,7 @@ export const raf = window.requestAnimationFrame
 	|| window.webkitRequestAnimationFrame
 	|| function(cb: FrameRequestCallback) { return setTimeout(cb, 16); };
 
-class AnimationQueue {
+export class AnimationQueue {
 	private readonly frames: Array<AFrame>;
 	
 	constructor(){
@@ -35,7 +35,7 @@ class AnimationQueue {
 	}
 }
 
-class AFrame {
+export class AFrame {
 	public queueIndex: number;
 	private skip: boolean;
 	private queue: AnimationQueue;

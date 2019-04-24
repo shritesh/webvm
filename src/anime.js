@@ -25,6 +25,7 @@ class AnimationQueue {
         this.frames.length = total - 1;
     }
 }
+exports.AnimationQueue = AnimationQueue;
 class AFrame {
     constructor(index, queue) {
         this.skip = false;
@@ -52,4 +53,5 @@ class AFrame {
         }
     }
 }
+exports.AFrame = AFrame;
 //# sourceMappingURL=anime.js.map
