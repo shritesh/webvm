@@ -1,3 +1,4 @@
+// FrameRequestCallback defines a callback interface.
 export interface FrameRequestCallback {
 	(time: number): void;
 }
@@ -99,7 +100,7 @@ export class AFrame {
 	public queueIndex: number;
 	private skip: boolean;
 	private queue: AnimationQueue;
-	private callbacks: Array<FrameRequestCallback>;
+	private readonly callbacks: Array<FrameRequestCallback>;
 	
 	constructor(index: number, queue: AnimationQueue){
 		this.skip = false;
