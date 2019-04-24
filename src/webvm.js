@@ -1,8 +1,21 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const dom = require("./dom");
-const anime = require("./anime");
-const patch = require("./patch");
-const utils = require("./utils");
-console.log("Hello RenderJSVM!", dom.isText, anime.raf, patch.PatchTree, utils.has);
+const _ = require("lodash");
+console.log("Hello RenderJSVM!");
+class DOMMount {
+    constructor(document, target) {
+        this.doc = document;
+        if (_.isString(target)) {
+            const targetSelector = target;
+            const node = this.doc.querySelector(targetSelector);
+            if (node === null || node === undefined) {
+                throw new Error(`unable to locate node for ${{ targetSelector }}`);
+            }
+            this.mountNode = node;
+            return;
+        }
+        this.mountNode = target;
+    }
+}
+exports.DOMMount = DOMMount;
 //# sourceMappingURL=webvm.js.map

@@ -97,8 +97,8 @@ export const DefaultJSONMaker: JSONMaker = {
 
 /*
 * PatchTreeByJSON handles a general case algorithm with a simplified steps for handling
-* tree patching and updating for a giving live node with that of new node loaded
-* into a document fragment.
+* tree patching and updating for a giving live node with that of a JSON description of
+* giving node changes.
 *
 * Currently we are following the current steps:
 *

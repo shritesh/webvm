@@ -1,57 +1,63 @@
 {
-    "name": "webvm",
-    "version": "1.0.0",
-    "description": "Rendering engine for handling DOM updates",
-    "main": "src/webvm.js",
-    "scripts": {
-        "lint": "npx tslint -p tsconfig.json",
-        "build": "npx tsc",
-        "watch": "npx tsc -w",
-        "ts-build": "npm run format && npm run build && npm run dist-unminified && npm run dist-minified",
-        "dist-unminified": "npx browserify --debug src/webvm.js -o dist/webvm.js",
-        "dist-minified": "npx browserify -p tinyify ./src/webvm.js -o ./dist/webvm.min.js",
-        "format": "npx prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
-        "test": "npx jest --config jestconfig.json",
-        "prepare": "npm run ts-build",
-        "prepublishOnly": "npm test && npm run lint",
-        "preversion": "npm run lint",
-        "version": "npm run format && git add -A src",
-        "postversion": "git push && git push --tags"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/gokit/webvm.git"
-    },
-    "plugins": [
-        "jsfmt"
-    ],
-    "author": "",
-    "license": "MIT",
-    "bugs": {
-        "url": "https://github.com/gokit/webvm/issues"
-    },
-    "homepage": "https://github.com/gokit/webvm#readme",
-    "devDependencies": {
-        "awesome-typescript-loader": "^5.2.1",
-        "browserify": "^16.2.3",
-        "parcel": "^1.12.3",
-        "parcel-bundler": "^1.12.3",
-        "rollup": "^1.10.0",
-        "source-map-loader": "^0.2.4",
-        "tinyify": "^2.5.0",
-        "ts-loader": "^5.3.3",
-        "tslint": "^5.16.0",
-        "tslint-config-prettier": "^1.18.0",
-        "typescript": "^3.4.1",
-        "watchify": "^3.11.1",
-        "webpack": "^4.29.6",
-        "webpack-cli": "^3.3.0"
-    },
-    "dependencies": {
-        "@types/node": "^11.13.5",
-        "@types/react": "^16.8.13",
-        "@types/react-dom": "^16.8.4",
-        "extend": "^2.0.2",
-        "preact": "^8.4.2"
-    }
+  "name": "webvm",
+  "version": "1.0.0",
+  "description": "Rendering engine for handling DOM updates",
+  "main": "src/webvm.js",
+  "scripts": {
+    "lint": "npx tslint -p tsconfig.json",
+    "build": "npx tsc",
+    "watch": "npx tsc -w",
+    "ts-build": "npm run format && npm run build && npm run dist-unminified && npm run dist-minified",
+    "dist-unminified": "npx browserify --debug src/webvm.js -o dist/webvm.js",
+    "dist-minified": "npx browserify -p tinyify ./src/webvm.js -o ./dist/webvm.min.js",
+    "format": "npx prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
+    "test": "jest",
+    "prepare": "npm run ts-build",
+    "prepublishOnly": "npm test && npm run lint",
+    "preversion": "npm run lint",
+    "version": "npm run format && git add -A src",
+    "postversion": "git push && git push --tags"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gokit/webvm.git"
+  },
+  "plugins": [
+    "jsfmt"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gokit/webvm/issues"
+  },
+  "homepage": "https://github.com/gokit/webvm#readme",
+  "devDependencies": {
+    "@types/jest": "^24.0.11",
+    "awesome-typescript-loader": "^5.2.1",
+    "browserify": "^16.2.3",
+    "chai": "^4.2.0",
+    "jest": "^24.7.1",
+    "jsdom": "^15.0.0",
+    "mocha": "^6.1.4",
+    "parcel": "^1.12.3",
+    "parcel-bundler": "^1.12.3",
+    "rollup": "^1.10.0",
+    "source-map-loader": "^0.2.4",
+    "tinyify": "^2.5.0",
+    "ts-jest": "^24.0.2",
+    "ts-loader": "^5.3.3",
+    "tslint": "^5.16.0",
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^3.4.1",
+    "watchify": "^3.11.1"
+  },
+  "dependencies": {
+    "@types/lodash": "^4.14.123",
+    "@types/node": "^11.13.5",
+    "@types/react": "^16.8.13",
+    "@types/react-dom": "^16.8.4",
+    "extend": "^2.0.2",
+    "lodash": "^4.17.11",
+    "preact": "^8.4.2"
+  }
 }
