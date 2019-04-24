@@ -1,12 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const utils_1 = require("./utils");
+exports.ELEMENT_NODE = 1;
+exports.DOCUMENT_FRAGMENT_NODE = 11;
+exports.DOCUMENT_NODE = 9;
+exports.TEXT_NODE = 3;
+exports.COMMENT_NODE = 8;
 const attributes = utils_1.createMap();
-exports.attributes = attributes;
 attributes['style'] = applyStyle;
 function isDocumentRoot(node) {
     return node.nodeType === 11 || node.nodeType === 9;
 }
+exports.isDocumentRoot = isDocumentRoot;
 function isElement(node) {
     return node.nodeType === 1;
 }
@@ -25,6 +30,7 @@ function getAncestry(node, root) {
     }
     return ancestry;
 }
+exports.getAncestry = getAncestry;
 const getRootNode = Node.prototype.getRootNode || function () {
     let cur = this;
     let prev = cur;
@@ -38,6 +44,7 @@ function getActiveElement(node) {
     const root = getRootNode.call(node);
     return isDocumentRoot(root) ? root.activeElement : null;
 }
+exports.getActiveElement = getActiveElement;
 function getFocusedPath(node, root) {
     const activeElement = getActiveElement(node);
     if (!activeElement || !node.contains(activeElement)) {
@@ -56,6 +63,35 @@ function moveBefore(parentNode, node, referenceNode) {
     }
 }
 exports.moveBefore = moveBefore;
+function insertBefore(parentNode, node, referenceNode) {
+    if (referenceNode === null) {
+        parentNode.appendChild(node);
+        return null;
+    }
+    parentNode.insertBefore(node, referenceNode);
+    return null;
+}
+exports.insertBefore = insertBefore;
+function replaceNode(parentNode, node, replacement) {
+    if (replacement === null) {
+        return null;
+    }
+    parentNode.replaceChild(replacement, node);
+    return null;
+}
+exports.replaceNode = replaceNode;
+function replaceNodeIf(targetNode, replacement) {
+    if (replacement === null) {
+        return false;
+    }
+    const parent = targetNode.parentNode;
+    if (!parent) {
+        return false;
+    }
+    parent.replaceChild(replacement, targetNode);
+    return true;
+}
+exports.replaceNodeIf = replaceNodeIf;
 function getNamespace(name) {
     if (name.lastIndexOf('xml:', 0) === 0) {
         return 'http://www.w3.org/XML/1998/namespace';
@@ -65,6 +101,7 @@ function getNamespace(name) {
     }
     return undefined;
 }
+exports.getNamespace = getNamespace;
 function applyAttr(el, name, value) {
     if (value == null) {
         el.removeAttribute(name);
@@ -102,6 +139,7 @@ function setStyleValue(style, prop, value) {
         style[prop] = value;
     }
 }
+exports.setStyleValue = setStyleValue;
 function applySVGStyle(el, name, style) {
     if (typeof style === 'string') {
         el.style.cssText = style;
@@ -161,6 +199,7 @@ function applySVGStyles(el, style) {
         }
     }
 }
+exports.applySVGStyles = applySVGStyles;
 function applyAttributeTyped(el, name, value) {
     const type = typeof value;
     if (type === 'object' || type === 'function') {
@@ -186,15 +225,39 @@ function getNamespaceForTag(tag, parent) {
     }
     return parent.namespaceURI;
 }
-function createElement(doc, nameOrCtor, key, content, attributes, parentNS) {
+exports.getNamespaceForTag = getNamespaceForTag;
+function recordAttributes(node) {
+    const attrs = {};
+    const attributes = node.attributes;
+    const length = attributes.length;
+    if (!length) {
+        return attrs;
+    }
+    for (let i = 0, j = 0; i < length; i += 1, j += 2) {
+        const attr = attributes[i];
+        attrs[attr.name] = attr.value;
+    }
+    return attrs;
+}
+exports.recordAttributes = recordAttributes;
+function createElement(doc, nameOrCtor, key, content, attributes, namespace) {
     let el;
     if (typeof nameOrCtor === 'function') {
         el = new nameOrCtor();
         return el;
     }
-    const namespace = getNamespaceForTag(nameOrCtor, parentNS);
-    if (namespace) {
-        el = doc.createElementNS(namespace, nameOrCtor);
+    namespace = namespace.trim();
+    if (namespace.length > 0) {
+        switch (nameOrCtor) {
+            case "svg":
+                el = doc.createElementNS('http://www.w3.org/2000/svg', nameOrCtor);
+                break;
+            case "math":
+                el = doc.createElementNS('http://www.w3.org/1998/Math/MathML', nameOrCtor);
+                break;
+            default:
+                el = doc.createElementNS(namespace, nameOrCtor);
+        }
     }
     else {
         el = doc.createElement(nameOrCtor);
@@ -214,4 +277,14 @@ function createText(doc, text, key) {
     return node;
 }
 exports.createText = createText;
+function removeFromNode(fromNode, endNode) {
+    const parentNode = fromNode.parentNode;
+    let child = fromNode;
+    while (child !== endNode) {
+        const next = child.nextSibling;
+        parentNode.removeChild(child);
+        child = next;
+    }
+}
+exports.removeFromNode = removeFromNode;
 //# sourceMappingURL=dom.js.map

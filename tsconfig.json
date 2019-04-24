@@ -10,6 +10,7 @@
         "noImplicitAny": true,
         "removeComments": true,
         "strictNullChecks": true,
+        "allowJs": true,
         "target": "es2015" ,
         "lib": ["es2015", "dom"]
     },
@@ -21,9 +22,5 @@
     ],
     "awesomeTypescriptLoaderOptions": {
         /* ... */
-    },
-    "plugins": [
-        "tslint:recommended",
-        "tslint-config-prettier"
-    ]
+    }
 }

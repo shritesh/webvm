@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 function Blank() { }
+exports.Blank = Blank;
 Blank.prototype = Object.create(null);
 function has(map, property) {
     return hasOwnProperty.call(map, property);

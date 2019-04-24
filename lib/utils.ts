@@ -3,12 +3,10 @@
  */
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 
-
 /**
  * A constructor function that will create blank objects.
  */
-function Blank() {}
-
+export function Blank() {}
 Blank.prototype = Object.create(null);
 
 
@@ -18,7 +16,7 @@ Blank.prototype = Object.create(null);
  * @param property The property to check.
  * @return Whether map has property.
  */
-function has(map: object, property: string): boolean {
+export function has(map: object, property: string): boolean {
   return hasOwnProperty.call(map, property);
 }
 
@@ -27,7 +25,7 @@ function has(map: object, property: string): boolean {
  * Creates an map object without a prototype.
  */
 // tslint:disable-next-line:no-any
-function createMap(): any {
+export function createMap(): any {
   // tslint:disable-next-line:no-any
   return new (Blank as any)();
 }
@@ -38,10 +36,9 @@ function createMap(): any {
  * @param arr The array to truncate.
  * @param length The new length of the array.
  */
-function truncateArray(arr: Array<{}|null|undefined>, length: number) {
+export function truncateArray(arr: Array<{}|null|undefined>, length: number) {
   while (arr.length > length) {
     arr.pop();
   }
 }
 
-export {createMap, has, truncateArray,};

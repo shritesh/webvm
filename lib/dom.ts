@@ -1,5 +1,20 @@
 import {createMap, has, truncateArray, } from './utils';
 
+// ELEMENT_NODE represents element node type value.
+export const ELEMENT_NODE = 1;
+
+// DOCUMENT_FRAGMENT_NODE represents documentFragment node type value.
+export const DOCUMENT_FRAGMENT_NODE = 11;
+
+// DOCUMENT_NODE represents document node type value.
+export const DOCUMENT_NODE = 9;
+
+// TEXT_NODE represents text node type value.
+export const TEXT_NODE = 3;
+
+// COMMENT_NODE represents comment node type value.
+export const COMMENT_NODE = 8;
+
 // ElementConstructor defines a interface which exposes a method to
 // create a new Element.
 export interface ElementConstructor {
@@ -37,7 +52,7 @@ attributes['style'] = applyStyle;
  * @param node The node to check.
  * @return True if the node the root of a document, false otherwise.
  */
-function isDocumentRoot(node: Node): node is Document|ShadowRoot {
+export function isDocumentRoot(node: Node): node is Document|ShadowRoot {
 	return node.nodeType === 11 || node.nodeType === 9;
 }
 
@@ -46,7 +61,7 @@ function isDocumentRoot(node: Node): node is Document|ShadowRoot {
  * @param node The node to check.
  * @return Whether or not the node is an Element.
  */
-function isElement(node: Node): node is Element {
+export function isElement(node: Node): node is Element {
 	return node.nodeType === 1;
 }
 
@@ -56,7 +71,7 @@ function isElement(node: Node): node is Element {
  * @param node The node to check.
  * @return Whether or not the node is a Text.
  */
-function isText(node: Node): node is Text {
+export function isText(node: Node): node is Text {
 	return node.nodeType === 3;
 }
 
@@ -65,7 +80,7 @@ function isText(node: Node): node is Text {
  * @param  root The root ancestor to get until, exclusive.
  * @return The ancestry of DOM nodes.
  */
-function getAncestry(node: Node, root: Node|null) {
+export function getAncestry(node: Node, root: Node|null) {
 	const ancestry: Node[] = [];
 	let cur: Node|null = node;
 
@@ -102,7 +117,7 @@ const getRootNode =
  * @return The activeElement in the Document or ShadowRoot
  *     corresponding to node, if present.
  */
-function getActiveElement(node: Node): Element|null {
+export function getActiveElement(node: Node): Element|null {
 	const root = getRootNode.call(node);
 	return isDocumentRoot(root) ? root.activeElement : null;
 }
@@ -114,7 +129,7 @@ function getActiveElement(node: Node): Element|null {
  * @param node The reference node to get the activeElement for.
  * @param root The root to get the focused path until.
  */
-function getFocusedPath(node: Node, root: Node|null): Node[] {
+export function getFocusedPath(node: Node, root: Node|null): Node[] {
 	const activeElement = getActiveElement(node);
 
 	if (!activeElement || !node.contains(activeElement)) {
@@ -132,7 +147,7 @@ function getFocusedPath(node: Node, root: Node|null): Node[] {
  * @param node
  * @param referenceNode
  */
-function moveBefore(parentNode: Node, node: Node, referenceNode: Node|null) {
+export function moveBefore(parentNode: Node, node: Node, referenceNode: Node|null) {
 	const insertReferenceNode = node.nextSibling;
 	let cur = referenceNode;
 
@@ -144,9 +159,65 @@ function moveBefore(parentNode: Node, node: Node, referenceNode: Node|null) {
 }
 
 /**
+ * insertBefore inserts giving node before reference node.
+ * If reference node is null, then a normal appendChild is used with
+ * parent to insert giving node.
+ * @param parentNode
+ * @param node
+ * @param referenceNode
+ */
+export function insertBefore(parentNode: Node, node: Node, referenceNode: Node|null) {
+	if (referenceNode === null){
+		parentNode.appendChild(node);
+		return null;
+	}
+	
+	parentNode.insertBefore(node, referenceNode);
+	return null;
+}
+
+/**
+ * replaceNode replaces giving node with provided replacement node.
+ * @param parentNode
+ * @param node
+ * @param replacement
+ */
+export function replaceNode(parentNode: Node, node: Node, replacement: Node) {
+	if (replacement === null){
+		return null;
+	}
+	
+	parentNode.replaceChild(replacement, node);
+	return null;
+}
+
+/**
+ * replaceNodeIf replaces giving node with provided replacement node by using
+ * parent of giving node if and only if it has one.
+ *
+ * It returns true/false if a replacement was actually done.
+ * @param targetNode
+ * @param replacement
+ */
+export function replaceNodeIf(targetNode: Node, replacement: Node): boolean {
+	if (replacement === null){
+		return false;
+	}
+	
+	const parent = targetNode.parentNode;
+	if (!parent){
+		return false;
+	}
+	
+	parent.replaceChild(replacement, targetNode);
+	return true;
+}
+
+
+/**
  * Returns the namespace to use for the attribute.
  */
-function getNamespace(name: string): string|undefined {
+export function getNamespace(name: string): string|undefined {
 	if (name.lastIndexOf('xml:', 0) === 0) {
 		return 'http://www.w3.org/XML/1998/namespace';
 	}
@@ -165,7 +236,7 @@ function getNamespace(name: string): string|undefined {
  * as an attribute.
  */
 // tslint:disable-next-line:no-any
-function applyAttr(el: Element, name: string, value: any) {
+export function applyAttr(el: Element, name: string, value: any) {
 	if (value == null) {
 		el.removeAttribute(name);
 	} else {
@@ -181,7 +252,7 @@ function applyAttr(el: Element, name: string, value: any) {
 // applyAttrs applies a giving map of key-value pairs into a attribute
 // list. If the giving value of a key in a map is null, then that key is
 // removed from the Element.
-function applyAttrs(el: Element, values: Attributes): void {
+export function applyAttrs(el: Element, values: Attributes): void {
 	for(let key in values){
 		if (values[key] == null){
 			el.removeAttribute(key);
@@ -195,7 +266,7 @@ function applyAttrs(el: Element, values: Attributes): void {
  * Applies a property to a given Element.
  */
 // tslint:disable-next-line:no-any
-function applyProp(el: Element, name: string, value: any) {
+export function applyProp(el: Element, name: string, value: any) {
 	// tslint:disable-next-line:no-any
 	(el as any)[name] = value;
 }
@@ -205,7 +276,7 @@ function applyProp(el: Element, name: string, value: any) {
  * Applies a value to a style declaration. Supports CSS custom properties by
  * setting properties containing a dash using CSSStyleDeclaration.setProperty.
  */
-function setStyleValue(
+export function setStyleValue(
 	style: CSSStyleDeclaration, prop: string, value: string) {
 	if (prop.indexOf('-') >= 0) {
 		style.setProperty(prop, value);
@@ -224,7 +295,7 @@ function setStyleValue(
  * @param  style The style to set. Either a string of css or an object
  *     containing property-value pairs.
  */
-function applySVGStyle(
+export function applySVGStyle(
 	el: SVGElement, name: string, style: string|{[k: string]: string}) {
 	if (typeof style === 'string') {
 		el.style.cssText = style;
@@ -249,7 +320,7 @@ function applySVGStyle(
  * @param  style The style to set. Either a string of css or an object
  *     containing property-value pairs.
  */
-function applyStyle(
+export function applyStyle(
 	el: HTMLElement, name: string, style: string|{[k: string]: string}) {
 	if (typeof style === 'string') {
 		el.style.cssText = style;
@@ -273,7 +344,7 @@ function applyStyle(
  * @param  style The style to set. Either a string of css or an object
  *     containing property-value pairs.
  */
-function applyStyles(el: HTMLElement, style: string|Attributes) {
+export function applyStyles(el: HTMLElement, style: string|Attributes) {
 	if (typeof style === 'string') {
 		el.style.cssText = style;
 	} else {
@@ -296,7 +367,7 @@ function applyStyles(el: HTMLElement, style: string|Attributes) {
  * @param  style The style to set. Either a string of css or an object
  *     containing property-value pairs.
  */
-function applySVGStyles(el: SVGElement, style: string|Attributes) {
+export function applySVGStyles(el: SVGElement, style: string|Attributes) {
 	if (typeof style === 'string') {
 		el.style.cssText = style;
 	} else {
@@ -319,7 +390,7 @@ function applySVGStyles(el: SVGElement, style: string|Attributes) {
  *     function it is set on the Element, otherwise, it is set as an HTML
  *     attribute.
  */
-function applyAttributeTyped(el: HTMLElement, name: string, value: {}) {
+export function applyAttributeTyped(el: HTMLElement, name: string, value: {}) {
 	const type = typeof value;
 
 	if (type === 'object' || type === 'function') {
@@ -344,7 +415,7 @@ const symbols = {
 /**
  * Gets the namespace to create an element (of a given tag) in.
  */
-function getNamespaceForTag(tag: string, parent: Node|null) {
+export function getNamespaceForTag(tag: string, parent: Node|null) {
 	if (tag === 'svg') {
 		return 'http://www.w3.org/2000/svg';
 	}
@@ -360,6 +431,29 @@ function getNamespaceForTag(tag: string, parent: Node|null) {
 	return parent.namespaceURI;
 }
 
+/**
+ * Records the element's attributes.
+ * @param node The Element that may have attributes
+ */
+export function recordAttributes(node: Element): Attributes {
+	const attrs: Attributes = {};
+	const attributes = node.attributes;
+	const length = attributes.length;
+	if (!length) {
+		return attrs;
+	}
+
+	// Use a cached length. The attributes array is really a live NamedNodeMap,
+	// which exists as a DOM "Host Object" (probably as C++ code). This makes the
+	// usual constant length iteration very difficult to optimize in JITs.
+	for (let i = 0, j = 0; i < length; i += 1, j += 2) {
+		const attr = attributes[i];
+		attrs[attr.name] = attr.value;
+	}
+	return attrs;
+}
+
+
 
 /**
  * Creates an Element.
@@ -368,9 +462,9 @@ function getNamespaceForTag(tag: string, parent: Node|null) {
  * @param key A key to identify the Element.
  * @param  content The underline html content for the Element.
  * @param  attributes The attributes map to apply to element.
- * @param  parentNS The underline html parent to retrieve namespace from.
+ * @param  namespace The node namespace if specific to be used in creating element.
  */
-function createElement(doc: Document, nameOrCtor: NameOrCtorDef, key: Key, content: string, attributes: Attributes|null, parentNS: Node|null): Element {
+export function createElement(doc: Document, nameOrCtor: NameOrCtorDef, key: Key, content: string, attributes: Attributes|null, namespace: string|''): Element {
 	let el: Element;
 
 	if (typeof nameOrCtor === 'function') {
@@ -378,9 +472,18 @@ function createElement(doc: Document, nameOrCtor: NameOrCtorDef, key: Key, conte
 		return el
 	}
 
-	const namespace = getNamespaceForTag(nameOrCtor, parentNS);
-	if (namespace) {
-		el = doc.createElementNS(namespace, nameOrCtor);
+	namespace = namespace.trim();
+	if (namespace.length > 0) {
+		switch (nameOrCtor) {
+			case "svg":
+				el = doc.createElementNS('http://www.w3.org/2000/svg', nameOrCtor);
+				break;
+			case "math":
+				el = doc.createElementNS('http://www.w3.org/1998/Math/MathML', nameOrCtor);
+				break;
+			default:
+				el = doc.createElementNS(namespace, nameOrCtor);
+		}
 	} else {
 		el = doc.createElement(nameOrCtor);
 	}
@@ -399,7 +502,6 @@ function createElement(doc: Document, nameOrCtor: NameOrCtorDef, key: Key, conte
 	return el;
 }
 
-
 /**
  * Creates a Text Node.
  * @param doc The document with which to create the Element.
@@ -407,29 +509,26 @@ function createElement(doc: Document, nameOrCtor: NameOrCtorDef, key: Key, conte
  * @param key The unique key of giving text node.
  * @return
  */
-function createText(doc: Document,  text: string|'', key: Key|''): Node {
+export function createText(doc: Document,  text: string|'', key: Key|''): Node {
 	const node = doc.createTextNode(text);
 	// node.key = key;
 	return node;
 }
 
+/**
+ * Clears out any unvisited Nodes in a given range.
+ * @param maybeParentNode
+ * @param startNode The node to start clearing from, inclusive.
+ * @param endNode The node to clear until, exclusive.
+ */
+export function removeFromNode(fromNode: Node, endNode: Node|null) {
+  const parentNode = fromNode.parentNode;
+  let child: Node = fromNode;
 
-export {
-	attributes,
+  while (child !== endNode) {
+    const next = child!.nextSibling;
+    parentNode!.removeChild(child!);
+    child = next!;
+  }
+}
 
-	isText,
-	isElement,
-	moveBefore,
-	getFocusedPath,
-
-	applyProp,
-	applyAttr,
-	applyAttrs,
-	applyStyle,
-	applyStyles,
-	applySVGStyle,
-	applyAttributeTyped,
-
-	createText,
-	createElement,
-};
