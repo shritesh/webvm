@@ -1,4 +1,5 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 const raf = require("./raf-polyfill");
 const utils = require("./utils");
 const exts = require("./extensions");
@@ -6,7 +7,7 @@ const anime = require("./anime");
 const patch = require("./patch");
 const mount = require("./mount");
 const dom = require("./dom");
-module.exports = {
+exports.default = {
     dom: dom,
     raf: raf,
     mount: mount,

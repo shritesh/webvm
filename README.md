@@ -4,19 +4,22 @@ WebVM
 *WebVM is still under heavy development but it is close to release with some changes still needed!*
 
 WebVM is a project geared towards providing a DOM interaction layer between different 
-projects built either in WebAssembly, Zig, Golang or Rust. Interacting with the DOM is at times 
-not as performant or somewhat impossible due to the nature of whatever language being used.
+projects built either in WebAssembly, Zig, Golang or Rust. 
+Interacting with the DOM directly within such languages is either costly or not as efficient as directly using javascript
+which the browser is built on. By providing an interface library which can sit in between your code and the browser, you can
+get a well defined set of objects and methods that allow easy use of different DOM objects and behaviours.
 
-I think by creating a simple interface library like this, developers can add whatever features 
-and methods desired using WebVM, which allows them to have a consistent means of interacting both 
-with DOM nodes, diffing and event management.
+I believe by having a simple interface library which can be dropped into any page, developers get the extra capability
+to extend and add more objects that wrap behaviours or capabilities for easier access and use in their respective languages. 
 
-WebVM goal is to be the sit in library that any project can include for this purpose, I plan to ensure
-it provides the following:
+WebVM goal is to be the sit in library that any project can include for the following purposes:
 
 - Efficient DOM diffing using html strings and JSON.
 - Easy interaction with RequestAnimationFrame for event loops.
 - Simple Event management using live events.
+
+*An important things is WebVM exists to allow you easily take what already exists and extend it further 
+for your personal use.*
 
 ## Building
 

@@ -6,7 +6,7 @@ import * as patch  from './patch';
 import * as mount  from './mount';
 import * as dom  from './dom';
 
-export = {
+export default {
 	dom: dom,
 	raf: raf,
 	mount: mount,

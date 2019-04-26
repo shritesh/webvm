@@ -1,6 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const dom = require("./dom");
+const exts = require("./extensions");
+const dom_1 = require("./dom");
 exports.DefaultNodeDictator = {
     Same: (n, m) => {
         return n.nodeType == m.nodeType && n.nodeName == m.nodeName;
@@ -9,6 +11,97 @@ exports.DefaultNodeDictator = {
         return false;
     },
 };
+function findElement(desc, parent) {
+    const selector = desc.name + "#" + desc.id;
+    const targets = parent.querySelectorAll(selector);
+    if (targets.length === 0) {
+        let attrSelector = desc.name + `[_tid='${desc.tid}']`;
+        let target = parent.querySelector(attrSelector);
+        if (target) {
+            return target;
+        }
+        attrSelector = desc.name + `[_atid='${desc.atid}']`;
+        target = parent.querySelector(attrSelector);
+        if (target) {
+            return target;
+        }
+        attrSelector = desc.name + `[_ref='${desc.ref}']`;
+        return parent.querySelector(attrSelector);
+    }
+    if (targets.length === 1) {
+        return targets[0];
+    }
+    const total = targets.length;
+    for (let i = 0; i < total; i++) {
+        const elem = targets.item(i);
+        if (elem.getAttribute("_tid") === desc.tid) {
+            return elem;
+        }
+        if (elem.getAttribute("_atid") === desc.atid) {
+            return elem;
+        }
+        if (elem.getAttribute("_ref") === desc.ref) {
+            return elem;
+        }
+    }
+    return null;
+}
+exports.findElement = findElement;
+function findElementbyRef(ref, parent) {
+    const ids = ref.split("/").map(function (elem) {
+        if (elem.trim() === "") {
+            return "";
+        }
+        return "#" + elem;
+    });
+    if (ids.length === 0) {
+        return null;
+    }
+    if (ids[0] === "" || ids[0].trim() === "") {
+        ids.shift();
+    }
+    const first = ids[0];
+    if (parent.id == first.substr(1)) {
+        ids.shift();
+    }
+    let cur = parent.querySelector(ids.shift());
+    while (cur) {
+        if (ids.length === 0) {
+            return cur;
+        }
+        cur = cur.querySelector(ids.shift());
+    }
+    return cur;
+}
+exports.findElementbyRef = findElementbyRef;
+function findElementParentbyRef(ref, parent) {
+    const ids = ref.split("/").map(function (elem) {
+        if (elem.trim() === "") {
+            return "";
+        }
+        return "#" + elem;
+    });
+    if (ids.length === 0) {
+        return null;
+    }
+    if (ids[0] === "" || ids[0].trim() === "") {
+        ids.shift();
+    }
+    ids.pop();
+    const first = ids[0];
+    if (parent.id == first.substr(1)) {
+        ids.shift();
+    }
+    let cur = parent.querySelector(ids.shift());
+    while (cur) {
+        if (ids.length === 0) {
+            return cur;
+        }
+        cur = cur.querySelector(ids.shift());
+    }
+    return cur;
+}
+exports.findElementParentbyRef = findElementParentbyRef;
 exports.DefaultJSONDictator = {
     Same: (n, m) => {
         return false;
@@ -18,23 +111,192 @@ exports.DefaultJSONDictator = {
     },
 };
 exports.DefaultJSONMaker = {
-    Make: (doc, descNode, staticRoot) => {
-        let node;
-        if (descNode.namespace.length !== 0) {
-            node = doc.createElement(descNode.name);
-        }
-        else {
-            node = doc.createElementNS(descNode.namespace, descNode.name);
-        }
-        return node;
-    },
+    Make: jsonMaker,
 };
-function JSONPatchTree(fragment, mountOrLastParentNode, dictator, maker) {
+function jsonMaker(doc, descNode, shallow, skipRemoved) {
+    if (descNode.type === dom_1.COMMENT_NODE) {
+        const node = doc.createComment(descNode.content);
+        exts.Objects.PatchWith(node, '_id', descNode.id);
+        exts.Objects.PatchWith(node, '_ref', descNode.ref);
+        exts.Objects.PatchWith(node, '_tid', descNode.tid);
+        exts.Objects.PatchWith(node, '_atid', descNode.atid);
+        return node;
+    }
+    if (descNode.type === dom_1.TEXT_NODE) {
+        const node = doc.createTextNode(descNode.content);
+        exts.Objects.PatchWith(node, '_id', descNode.id);
+        exts.Objects.PatchWith(node, '_ref', descNode.ref);
+        exts.Objects.PatchWith(node, '_tid', descNode.tid);
+        exts.Objects.PatchWith(node, '_atid', descNode.atid);
+        return node;
+    }
+    let node;
+    if (descNode.namespace.length !== 0) {
+        node = doc.createElement(descNode.name);
+    }
+    else {
+        node = doc.createElementNS(descNode.namespace, descNode.name);
+    }
+    exts.Objects.PatchWith(node, '_id', descNode.id);
+    exts.Objects.PatchWith(node, '_ref', descNode.ref);
+    exts.Objects.PatchWith(node, '_tid', descNode.tid);
+    exts.Objects.PatchWith(node, '_atid', descNode.atid);
+    node.setAttribute("id", descNode.id);
+    node.setAttribute("_tid", descNode.tid);
+    node.setAttribute("_ref", descNode.ref);
+    node.setAttribute("_atid", descNode.atid);
+    node.setAttribute("events", BuildEvent(descNode.events));
+    descNode.attrs.forEach(function attrs(attr) {
+        node.setAttribute(attr.Key, attr.Value);
+    });
+    if (descNode.removed) {
+        node.setAttribute("_removed", "true");
+        return node;
+    }
+    if (!shallow) {
+        descNode.children.forEach(function (kidJSON) {
+            if (skipRemoved && kidJSON.removed) {
+                return;
+            }
+            node.appendChild(jsonMaker(doc, kidJSON, shallow, skipRemoved));
+        });
+    }
+    return node;
+}
+exports.jsonMaker = jsonMaker;
+function BuildEvent(events) {
+    const values = new Array();
+    events.forEach(function attrs(attr) {
+        const eventName = attr.Name + "-" + (attr.PreventDefault ? "1" : "0") + (attr.StopPropagation ? "1" : "0");
+        values.push(eventName);
+    });
+    return values.join(" ");
+}
+exports.BuildEvent = BuildEvent;
+function JSONPatchTree(fragment, mount, dictator, maker, patched) {
+    if (exts.Objects.isNullOrUndefined(patched)) {
+        patched = {};
+    }
+    let targetNode = findElement(fragment, mount);
+    if (exts.Objects.isNullOrUndefined(targetNode)) {
+        const tNode = maker.Make(document, fragment, false, true);
+        patched[targetNode] = true;
+        mount.appendChild(targetNode);
+        return;
+    }
+    PatchJSONNode(fragment, targetNode, dictator, maker, patched);
 }
 exports.JSONPatchTree = JSONPatchTree;
-function JSONPartialPatchTree(fragment, mountOrLastParentNode, dictator, maker) {
+function PatchJSONNode(fragment, targetNode, dictator, maker, patched) {
+    if (!dictator.Same(targetNode, fragment)) {
+        const tNode = maker.Make(document, fragment, false, true);
+        patched[tNode] = true;
+        dom.replaceNode(targetNode.parentNode, targetNode, tNode);
+        return;
+    }
+    if (!dictator.Changed(targetNode, fragment)) {
+        patched[targetNode] = true;
+        return;
+    }
+    PatchJSONAttributes(fragment, targetNode);
+    const totalKids = targetNode.childNodes.length;
+    const fragmentKids = fragment.children.length;
+    let i = 0;
+    for (; i < totalKids; i++) {
+        const childNode = targetNode.childNodes[i];
+        if (i >= fragmentKids) {
+            childNode.remove();
+            continue;
+        }
+        const childFragment = fragment.children[i];
+        PatchJSONNode(childFragment, childNode, dictator, maker, patched);
+    }
+    for (; i < fragmentKids; i++) {
+        const tNode = maker.Make(document, fragment, false, true);
+        patched[tNode] = true;
+        targetNode.appendChild(tNode);
+    }
+    return;
+}
+exports.PatchJSONNode = PatchJSONNode;
+function JSONPartialPatchTree(fragment, mount, dictator, maker) {
+    const changes = fragment.filter(function (elem) {
+        return !elem.removed;
+    });
+    fragment.filter(function (elem) {
+        if (!elem.removed) {
+            return false;
+        }
+        let filtered = true;
+        changes.forEach(function (el) {
+            if (elem.tid === el.tid || elem.tid == el.atid || elem.ref === el.ref) {
+                filtered = false;
+            }
+        });
+        return filtered;
+    }).forEach(function (removal) {
+        const target = findElement(removal, mount);
+        if (target) {
+            target.remove();
+        }
+    });
+    changes.forEach(function (change) {
+        const targetNode = findElement(change, mount);
+        if (exts.Objects.isNullOrUndefined(targetNode)) {
+            const targetNodeParent = findElementParentbyRef(change.ref, mount);
+            if (exts.Objects.isNullOrUndefined(targetNodeParent)) {
+                console.log("Unable to apply new change stream: ", change);
+                return;
+            }
+            const tNode = maker.Make(document, change, false, true);
+            targetNodeParent.appendChild(tNode);
+            return;
+        }
+        const tNode = maker.Make(document, change, false, true);
+        dom.replaceNode(targetNode.parentNode, targetNode, tNode);
+    });
+    return;
 }
 exports.JSONPartialPatchTree = JSONPartialPatchTree;
+function JSONPatchTextComments(fragment, target) {
+    if (fragment.type !== dom_1.COMMENT_NODE && fragment.type !== dom_1.TEXT_NODE) {
+        return;
+    }
+    if (fragment.type !== dom_1.COMMENT_NODE && fragment.type !== dom_1.TEXT_NODE) {
+        return;
+    }
+    if (target.textContent === fragment.content) {
+        return;
+    }
+    target.textContent = fragment.content;
+    exts.Objects.PatchWith(target, '_ref', fragment.ref);
+    exts.Objects.PatchWith(target, '_tid', fragment.tid);
+    exts.Objects.PatchWith(target, '_atid', fragment.atid);
+}
+exports.JSONPatchTextComments = JSONPatchTextComments;
+function PatchJSONAttributes(node, target) {
+    const oldNodeAttrs = dom.recordAttributes(target);
+    node.attrs.forEach(function (attr) {
+        const oldValue = oldNodeAttrs[attr.Key];
+        delete oldNodeAttrs[attr.Key];
+        if (attr.Value === oldValue) {
+            return null;
+        }
+        target.setAttribute(attr.Key, attr.Value);
+    });
+    for (let index in oldNodeAttrs) {
+        target.removeAttribute(index);
+    }
+    target.setAttribute("_tid", node.tid);
+    target.setAttribute("_ref", node.ref);
+    target.setAttribute("_atid", node.atid);
+    target.setAttribute("events", BuildEvent(node.events));
+    exts.Objects.PatchWith(target, '_id', node.id);
+    exts.Objects.PatchWith(target, '_ref', node.ref);
+    exts.Objects.PatchWith(target, '_tid', node.tid);
+    exts.Objects.PatchWith(target, '_atid', node.atid);
+}
+exports.PatchJSONAttributes = PatchJSONAttributes;
 function PatchTree(newFragment, oldNodeOrMount, dictator, isChildRecursion) {
     if (isChildRecursion) {
         const rootNode = oldNodeOrMount.parentNode;
@@ -70,8 +332,8 @@ function PatchTree(newFragment, oldNodeOrMount, dictator, isChildRecursion) {
         if (!dictator.Changed(lastNode, newNodeHandled)) {
             continue;
         }
-        if (lastNode.nodeType == dom.TEXT_NODE || lastNode.nodeType == dom.COMMENT_NODE) {
-            if (lastNode.textContent != newNodeHandled.textContent) {
+        if (lastNode.nodeType === dom.TEXT_NODE || lastNode.nodeType === dom.COMMENT_NODE) {
+            if (lastNode.textContent !== newNodeHandled.textContent) {
                 lastNode.textContent = newNodeHandled.textContent;
             }
             continue;

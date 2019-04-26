@@ -112,6 +112,211 @@ const getRootNode =
 		return prev;
 	};
 
+// NodeMatcher defines an interface which defines a function to be 
+// used for matching a Node against some criteria.
+export interface NodeMatcher {
+	(n: Node): boolean;
+}
+
+/**
+ * reverseCollectNodeWithBreadth runs across giving parent node in a breadth first manner, never
+ * going below the parent's children level, checking if giving children node match
+ * provided matcher.
+ *
+ * Walks the tree in reverse from last child of parent to first child.
+ * It collects all matching nodes into provide matches array.
+ *
+ * @param parent the parent node to match through.
+ * @param matcher the matcher function to use for match checks.
+ * @param matches the array used to reverseCollected matched nodes.
+ */
+export function reverseCollectNodeWithBreadth(parent: Node, matcher: NodeMatcher, matches: Array<Node>): void {
+	let cur: Node = parent.lastChild!;
+	while (cur) {
+		if (matcher(cur)){
+			matches.push(cur);
+		}
+		cur = cur.previousSibling!;
+	}
+}
+
+
+/**
+ * reverseFindNodeWithBreadth runs across giving parent node in a breadth first manner, never
+ * going below the parent's children level, checking if giving children node match
+ * provided matcher.
+ *
+ * Walks the tree in reverse from last child of parent to first child.
+ *
+ * @param parent the parent node to match through.
+ * @param matcher the matcher function to use for match checks.
+ */
+export function reverseFindNodeWithBreadth(parent: Node, matcher: NodeMatcher): Node|null {
+	let cur: Node = parent.lastChild!;
+	
+	while (cur) {
+		if (matcher(cur)){
+			return cur
+		}
+		cur = cur.previousSibling!;
+	}
+	return null;
+}
+
+/**
+ * collectNodeWithBreadth runs across giving parent node in a breadth first manner, never
+ * going below the parent's children level, checking if giving children node match
+ * provided matcher.
+ *
+ * It collects all matching nodes into provide matches array.
+ *
+ * @param parent the parent node to match through.
+ * @param matcher the matcher function to use for match checks.
+ * @param matches the array used to collected matched nodes.
+ */
+export function collectNodeWithBreadth(parent: Node, matcher: NodeMatcher, matches: Array<Node>): void {
+	let cur = parent.firstChild!;
+	if (matcher(cur)){
+		matches.push(cur);
+	}
+	
+	while (cur) {
+		if (matcher(cur.nextSibling!)){
+			matches.push(cur);
+		}
+		
+		cur = cur.nextSibling!;
+	}
+}
+
+/**
+ * collectNodeWithDepth runs across giving parent node in a depth first manner, never
+ * going through other siblings, but going from parent to first child down the tree.
+ * 
+ * It collects all matching nodes into provide matches array.
+ *
+ * @param parent the parent node to match through.
+ * @param matcher the matcher function to use for match checks.
+ * @param matches the array used to collected matched nodes.
+ */
+export function collectNodeWithDepth(parent: Node, matcher: NodeMatcher, matches: Array<Node>): void {
+	let cur:Node = parent.firstChild!;
+	while (cur) {
+		if (matcher(cur)){
+			matches.push(cur);
+		}
+		cur = cur.firstChild!;
+	}
+}
+
+/**
+* findNodeWithBreadth runs across giving parent node in a breadth first manner, never
+* going below the parent's children level, checking if giving children node match
+* provided matcher.
+*
+* @param parent the parent node to match through.
+* @param matcher the matcher function to use for match checks.
+*/  
+export function findNodeWithBreadth(parent: Node, matcher: NodeMatcher): Node|null {
+		let cur:Node = parent.firstChild!;
+		while (cur) {
+			if (matcher(cur)){
+				return cur
+			}
+			cur = cur.nextSibling!;
+		}
+		return null;
+}
+
+/**
+ * findNodeWithDepth runs across giving parent node in a depth first manner, never
+ * going through other siblings, but going from parent to first child down the tree.
+ *
+ * @param parent the parent node to match through.
+ * @param matcher the matcher function to use for match checks.
+ */
+export function findNodeWithDepth(parent: Node, matcher: NodeMatcher): Node|null {
+	let cur:Node = parent.firstChild!;
+	while (cur) {
+		if (matcher(cur)){
+			return cur
+		}
+		cur = cur.firstChild!;
+	}
+	return null;
+}
+
+/**
+ * findDepthFirst runs across giving parent node in a depth first manner where each
+ * child node is search depth first for a matching node.
+ *
+ * @param parent the parent node to match through.
+ * @param matcher the matcher function to use for match checks.
+ */
+export function findDepthFirst(parent: Node, matcher: NodeMatcher): Node|null {
+	let cur:Node = parent.firstChild!;
+	while (cur) {
+		const found = findNodeWithDepth(cur, matcher);
+		if (found){
+			return found
+		}
+		cur = cur.nextSibling!;
+	}
+	return null;
+}
+
+/**
+ * collectDepthFirst runs across giving parent node in a depth first manner where each
+ * child node is search depth first for a matching node.
+ *
+ * @param parent the parent node to match through.
+ * @param matcher the matcher function to use for match checks.
+ * @param matches the array used to collected matched nodes.
+ */
+export function collectDepthFirst(parent: Node, matcher: NodeMatcher, matches: Array<Node>): void {
+	let cur:Node = parent.firstChild!;
+	while (cur) {
+		collectNodeWithDepth(cur, matcher, matches);
+		cur = cur.nextSibling!;
+	}
+	return;
+}
+
+/**
+* findBreadthFirst runs across giving parent node in a depth first manner where each
+* child node is search depth first for a matching node.
+*
+* @param parent the parent node to match through.
+* @param matcher the matcher function to use for match checks.
+*/
+export function findBreadthFirst(parent: Node, matcher: NodeMatcher): Node|null {
+	let cur:Node = parent.firstChild!;
+	while (cur) {
+		const found = findNodeWithBreadth(cur, matcher);
+		if (found){
+			return found
+		}
+		cur = cur.firstChild!;
+	}
+	return null;
+}
+
+/**
+ * collectBreadthFirst runs across giving parent node in a depth first manner where each
+ * child node is search depth first for a matching node.
+ *
+ * @param parent the parent node to match through.
+ * @param matcher the matcher function to use for match checks.
+ * @param matches the array used to collected matched nodes.
+ */
+export function collectBreadthFirst(parent: Node, matcher: NodeMatcher, matches: Array<Node>): void {
+	let cur:Node = parent.firstChild!;
+	while (cur) {
+		collectNodeWithBreadth(cur, matcher, matches);
+		cur = cur.firstChild!;
+	}
+	return;
+}
 
 /**
  * @param node The node to get the activeElement for.

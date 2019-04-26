@@ -1,4 +1,7 @@
 import * as dom from './dom';
+import * as exts from './extensions';
+
+import { COMMENT_NODE, TEXT_NODE } from './dom';
 
 // NodeDictator defines an interface type which exposes methods
 // that operate on DOM Npdes to patch into a patchTree process allowing
@@ -41,7 +44,8 @@ export interface JSONNode {
 	tid: string;                // tid gives the unique id dom node.
 	atid: string;               // atid tells the ancestor-id which was the reconciliation process. It tells us what the id of old node.
 	ref: string;                // ref defines a reference value provided to match nodes from rendering and rendered.
-	type: string;               // type tells us which type of node e.g document-fragment, text-node
+	type: number;               // type tells us which type number representing of node e.g 3, 8, 11.
+	typeName: string;           // typeName tells us which type of node e.g document-fragment, text-node
 	name: string;               // name tells the name of giving node e.g div, span.
 	content: string;            // content represents text content if this is a content.
 	namespace: string;          // namespace tells the DOM namespace for giving node.
@@ -49,6 +53,156 @@ export interface JSONNode {
 	attrs: Array<JSONAttr>;     // attrs defines the array of node attributes.
 	events: Array<JSONEvent>;   // events defines the event map for giving attribute.
 	children: Array<JSONNode>;  // children contains child node descriptions for giving root.
+}
+
+/**
+ * findElement seeks giving DOMNode if available targeted by giving JSONNode in provided
+ * parent
+ *
+ * @param desc JSONNode describing target element.
+ * @param parent contain nodes we could be targeting.
+ */
+export function findElement(desc: JSONNode, parent: Element): Element|null {
+	const selector: string = desc.name+"#"+ desc.id;
+	const targets = parent.querySelectorAll(selector)!;
+	
+	// if non is found then attempt the use of attribute selectors.
+	// do a specific attribute selector with a tid.
+	if (targets.length === 0){
+		let attrSelector = desc.name + `[_tid='${desc.tid}']`;
+		let target = parent.querySelector(attrSelector)!;
+		if (target){
+			return target;
+		}
+		
+		// could it be the tid represents a change, so the element is still represented by it's
+		// ancestral tid?
+		attrSelector = desc.name + `[_atid='${desc.atid}']`;
+		target = parent.querySelector(attrSelector)!;
+		if (target){
+			return target;
+		}
+		
+		// last will be to search by reference value
+		attrSelector = desc.name + `[_ref='${desc.ref}']`;
+		return parent.querySelector(attrSelector)!;
+	}
+	
+	if (targets.length === 1){
+		return targets[0];
+	}
+	
+	// search the list for any match item.
+	const total = targets.length;
+	for(let i =0; i < total; i++){
+		const elem = targets.item(i);
+		if(elem.getAttribute("_tid") === desc.tid){
+			return elem;
+		}
+		if(elem.getAttribute("_atid") === desc.atid){
+			return elem;
+		}
+		if(elem.getAttribute("_ref") === desc.ref){
+			return elem;
+		}
+	}
+	return null;
+}
+
+/**
+ * findElementByRef seeks giving DOMNode if available by running through parents children
+ * using the ref string which represents a tree of parent to child ID attribute list.
+ *
+ * @param ref JSONNode describing target element.
+ * @param parent contain nodes we could be targeting.
+ */
+export function findElementbyRef(ref: string, parent: Element): Element|null {
+	
+	// split id map and attach "#" to indicate we are dealing with a id attribute.
+	const ids: Array<string> = ref.split("/").map(function(elem) {
+		if (elem.trim()=== ""){
+			return "";
+		}
+		return "#"+elem;
+	});
+	
+	if (ids.length === 0){
+		return null;
+	}
+	
+	if (ids[0] === "" || ids[0].trim() === ""){
+		ids.shift();
+	}
+	
+	// parent checking can be tricky, because one example could be we are provided
+	// a static parent which has no relation to the id tree, so we would need to check
+	// from the first ID if any such element exists, but another instance is the parent
+	// could actually be the first ID in the list, so we would have to plan accordingly
+	// in that form.
+	
+	// if we are dealing with a parent who is the actual first id in the list then
+	// shift our list to account for this.
+	const first = ids[0];
+	if (parent.id == first.substr(1)){
+		ids.shift()
+	}
+	
+	// Go through the id list and pull out the next child in the tree.
+	let cur: Element = parent.querySelector(ids.shift()!)! ;
+	while (cur) {
+		if (ids.length === 0){
+			return cur;
+		}
+		cur = cur.querySelector(ids.shift()!)!;
+	}
+	return cur;
+}
+
+/**
+ * findElementParentByRef seeks giving DOMNode parent if available by running through parents children
+ * using the ref string until it reaches a node it can't find which will represent where the node should
+ * exists. It returns the parent of that node..
+ *
+ * @param ref JSONNode describing target element.
+ * @param parent contain nodes we could be targeting.
+ */
+export function findElementParentbyRef(ref: string, parent: Element): Element|null {
+	
+	// split id map and attach "#" to indicate we are dealing with a id attribute.
+	const ids: Array<string> = ref.split("/").map(function(elem) {
+		if (elem.trim() === ""){
+			return "";
+		}
+		return "#"+elem;
+	});
+	
+	if (ids.length === 0){
+		return null;
+	}
+	
+	if (ids[0] === "" || ids[0].trim() === ""){
+		ids.shift();
+	}
+	
+	// pop the last target as it's the parent we want.
+	ids.pop();
+	
+	// if we are dealing with a parent who is the actual first id in the list then
+	// shift our list to account for this.
+	const first = ids[0];
+	if (parent.id == first.substr(1)){
+		ids.shift()
+	}
+	
+	// Go through the id list and pull out the next child in the tree.
+	let cur: Element = parent.querySelector(ids.shift()!)! ;
+	while (cur) {
+		if (ids.length === 0){
+			return cur;
+		}
+		cur = cur.querySelector(ids.shift()!)!;
+	}
+	return cur;
 }
 
 /*
@@ -74,30 +228,114 @@ export const DefaultJSONDictator: JSONDictator = {
 // a DOM node from a JSON node.
 export interface JSONMaker {
 	
-	// Make will take provided JSONNode and create
-	// appropriate node representation for giving json.
-	//
-	// @param n is the JSONNode to use.
-	// @param staticRoot is a static root element in the DOM we can bind events to.
-	Make(doc: Document, n: JSONNode, staticRoot: Node|null): Node
+	/**
+	* Make will take provided JSONNode and create
+	* appropriate node representation for giving json.
+	*
+	* @param doc is the Document to use for creating elements.
+	* @param n is the JSONNode describing the DOM node to generate.
+	* @param shallow indicates if we want to generate a deep node or without it's children.
+	* @param skipRemoved indicates if we want to skip removed fragments in the children list of JSON Node.
+	*/
+	Make(doc: Document, n: JSONNode, shallow: boolean, skipRemoved: boolean): Node
 }
 
 // DefaultJSONMaker implements the JSONMaker interface.
 export const DefaultJSONMaker: JSONMaker = {
-	Make: (doc: Document,descNode: JSONNode, staticRoot: Node|null): Node => {
-		let node: Node;
-		
-		if (descNode.namespace.length !== 0){
-			node = doc.createElement(descNode.name)
-		}else{
-			node = doc.createElementNS(descNode.namespace, descNode.name)
-		}
-		
-		return node;
-	},
+	Make: jsonMaker,
 };
 
-/*
+// jsonMaker will generate a complete DOM node either complete with children or shallow
+// which represented the giving JSONNode description.
+export function jsonMaker(doc: Document, descNode: JSONNode, shallow: boolean|false, skipRemoved: boolean|true): Node {
+	if (descNode.type === COMMENT_NODE){
+		const node = doc.createComment(descNode.content);
+		exts.Objects.PatchWith(node, '_id', descNode.id);
+		exts.Objects.PatchWith(node, '_ref', descNode.ref);
+		exts.Objects.PatchWith(node, '_tid', descNode.tid);
+		exts.Objects.PatchWith(node, '_atid', descNode.atid);
+		return node;
+	}
+	
+	if (descNode.type === TEXT_NODE){
+		const node = doc.createTextNode(descNode.content);
+		exts.Objects.PatchWith(node, '_id', descNode.id);
+		exts.Objects.PatchWith(node, '_ref', descNode.ref);
+		exts.Objects.PatchWith(node, '_tid', descNode.tid);
+		exts.Objects.PatchWith(node, '_atid', descNode.atid);
+		return node;
+	}
+	
+	let node: Element;
+	if (descNode.namespace.length !== 0){
+		node = doc.createElement(descNode.name)
+	}else{
+		node = doc.createElementNS(descNode.namespace, descNode.name)
+	}
+	
+	// attach information as from format into node JS Object itself.
+	exts.Objects.PatchWith(node, '_id', descNode.id);
+	exts.Objects.PatchWith(node, '_ref', descNode.ref);
+	exts.Objects.PatchWith(node, '_tid', descNode.tid);
+	exts.Objects.PatchWith(node, '_atid', descNode.atid);
+	
+	node.setAttribute("id", descNode.id);
+	node.setAttribute("_tid", descNode.tid);
+	node.setAttribute("_ref", descNode.ref);
+	node.setAttribute("_atid", descNode.atid);
+	node.setAttribute("events", BuildEvent(descNode.events));
+	
+	descNode.attrs.forEach(function attrs(attr) {
+		node.setAttribute(attr.Key, attr.Value);
+	});
+	
+	// if it has a removed marker, i am yet unsure why you would want
+	// to render a removed JSON Node but rather than add the other bits
+	// you just get a shallow render
+	if (descNode.removed){
+		node.setAttribute("_removed", "true");
+		return node;
+	}
+	
+	if (!shallow){
+		descNode.children.forEach(function(kidJSON) {
+			if (skipRemoved && kidJSON.removed) {
+				return;
+			}
+			node.appendChild(jsonMaker(doc, kidJSON, shallow, skipRemoved));
+		});
+	}
+	return node;
+}
+
+/**
+* BuildEvent builds a string containing the accepted format for event attribute value
+* where an event name, it's flag of propagation and default behaviour prevention are
+* represented by a string format: {eventName}-{PreventDefault=0|1}{StopPropagation=0|1}.
+*
+* @param: events is a Array of JSONEvents objects.
+*/
+export function BuildEvent(events: Array<JSONEvent>): string {
+	const values = new Array<string>();
+	events.forEach(function attrs(attr) {
+		const eventName: string = attr.Name + "-" + (attr.PreventDefault ? "1" : "0") + (attr.StopPropagation? "1" : "0");
+		values.push(eventName);
+	});
+	return values.join(" ");
+}
+
+// NodeMap defines a map of Node keys - boolean values pairs.
+export type NodeMap = {
+	// @ts-ignore
+	[x: Node]: boolean
+}
+
+// NodeMap defines a map of string keys - boolean values pairs.
+export type NodeTidMap = {
+	[x: string]: boolean
+}
+
+/**
 * JSONPatchTree handles a general case algorithm with a simplified steps for handling
 * tree patching and updating for a giving live node with that of a JSON description of
 * giving node changes.
@@ -120,22 +358,221 @@ export const DefaultJSONMaker: JSONMaker = {
 * and swapped with whatever node is found in that position.
 *
 * @param fragment: A JSONNode fragment which will be used for DOM update.
-* @param mountOrLastParentNode: A static node or last parent node which holds the target node for the giving JSON fragment.
+* @param mount: A static node or last parent node which holds the target node for the giving JSON fragment.
 * @param dictator: Dictator helps us decide if the node is the same or changed.
 * @param maker: Maker helps create a real DOM node from a JSONNode.
-* @param isChildRecursion: A bool which tells the patch algorithm that it is comparing inner nodes of roots.
+* @param patched: A map which contains nodes and tid's that where patched and updated.
 * @return
 **/
-export function JSONPatchTree(fragment: JSONNode, mountOrLastParentNode: Node, dictator:JSONDictator, maker: JSONMaker){
-
+export function JSONPatchTree(fragment: JSONNode, mount: Element, dictator:JSONDictator, maker: JSONMaker, patched: NodeMap|null): void {
+	// collected a hash-map of which tid nodes were updated to avoid the final
+	// clean up process removing valid substituted nodes.
+	if (exts.Objects.isNullOrUndefined(patched)){
+		patched = ({} as NodeMap);
+	}
+	
+	// Attempt to find the giving node within the mount, if we can't find it then add it as a new node.
+	let targetNode: Element = findElement(fragment, mount)!;
+	if(exts.Objects.isNullOrUndefined(targetNode)){
+		const tNode = maker.Make(document, fragment, false, true);
+		
+		// @ts-ignore
+		patched[targetNode] = true;
+		
+		mount.appendChild(targetNode);
+		return;
+	}
+	
+	PatchJSONNode(fragment, targetNode, dictator,maker, patched!)
 }
 
-// JSONPartialPatchTree provides a change stream like patching mechanism which uses a array of incoming JSONNode changes
-// which arrangements have no connected correlation to the actual dom but will be treated as individual change stream which
-// will be used to locate the specific elements referenced by using their JSONNode.ref for tracking and update.
-export function JSONPartialPatchTree(fragment: Array<JSONNode>, mountOrLastParentNode: Node, dictator:JSONDictator, maker: JSONMaker){
-
+/**
+ * PatchJSONNode provides a DOM node patching approach for a giving JSON fragment and it's target DOM node.
+ * It uses a recursive function which runs through a fragment and it's target node and the children changes
+ * of that target node as well. 
+ * 
+ * Generally you should use PatchJSONNode if you wish to apply a JSONode change directly to the target node as
+ * JSONPatchTree will first seek out the target node from the parent or mount node.
+ * 
+ * @param fragment is the JSONNode containing change for giving target.
+ * @param targetNode is the target DOM node to apply changes to.
+ * @param dictator is used to decide the same-ness and change-ness state of target node.
+ * @param maker is used to create a new DOM node from a JSONNode.
+ * @param patched is used to track nodes which have being changed.
+ * @constructor
+ */
+export function PatchJSONNode(fragment: JSONNode, targetNode: Element, dictator:JSONDictator, maker: JSONMaker, patched: NodeMap): void {
+	// if we are not dealing with exactly the same node as fragment as far as the.
+	// then dictator is concerned, then we must do a swap after creating node.
+	if (!dictator.Same(targetNode, fragment)){
+		const tNode = maker.Make(document, fragment, false, true);
+		// @ts-ignore
+		patched[tNode] = true;
+		dom.replaceNode(targetNode.parentNode!, targetNode, tNode);
+		return;
+	}
+	
+	if (!dictator.Changed(targetNode, fragment)){
+		// @ts-ignore
+		patched[targetNode] = true;
+		return;
+	}
+	
+	// Get current attributes from of target in comparison with fragment.
+	PatchJSONAttributes(fragment, targetNode);
+	
+	// Loop over children of giving node
+	const totalKids = targetNode.childNodes.length;
+	const fragmentKids = fragment.children.length;
+	
+	let i = 0;
+	for(; i < totalKids; i++){
+		const childNode = targetNode.childNodes[i];
+		if (i >= fragmentKids){
+			childNode.remove();
+			continue;
+		}
+		
+		const childFragment = fragment.children[i];
+		PatchJSONNode(childFragment, childNode as Element, dictator, maker, patched);
+	}
+	
+	for(; i < fragmentKids; i++){
+		const tNode = maker.Make(document, fragment, false, true);
+		// @ts-ignore
+		patched[tNode] = true;
+		targetNode.appendChild(tNode);
+	}
+	return;
 }
+
+/**
+ * JSONPartialPatchTree provides a change stream like patching mechanism which uses a array of incoming JSONNode changes
+ * which arrangements have no connected correlation to the actual dom but will be treated as individual change stream which
+ * will be used to locate the specific elements referenced by using their JSONNode.ref for tracking and update.
+ *
+ * @param fragment
+ * @param mount
+ * @param dictator
+ * @param maker
+ * @constructor
+ */
+export function JSONPartialPatchTree(fragment: Array<JSONNode>, mount: Element, dictator:JSONDictator, maker: JSONMaker): void {
+	const changes = fragment.filter(function(elem) {
+		return !elem.removed;
+	});
+	
+	// filter out all removals and ensure no removals match some
+	// change or update before we actually make changes to the dom.
+	fragment.filter(function(elem) {
+		if (!elem.removed) {
+			return false;
+		}
+		
+		// if this removals has a directly related change, then filter it out also
+		// from removals.
+		let filtered = true;
+		changes.forEach(function(el) {
+			if (elem.tid === el.tid || elem.tid == el.atid || elem.ref === el.ref){
+				filtered = false;
+			}
+		});
+		return filtered;
+	}).forEach(function(removal) {
+			const target = findElement(removal, mount);
+			if (target){
+				target.remove();
+			}
+	});
+	
+	changes.forEach(function(change) {
+		const targetNode = findElement(change, mount);
+		if (exts.Objects.isNullOrUndefined(targetNode)){
+			// Get parent of giving change at-least.
+			const targetNodeParent = findElementParentbyRef(change.ref, mount)!;
+			if (exts.Objects.isNullOrUndefined(targetNodeParent)){
+				console.log("Unable to apply new change stream: ", change);
+				return;
+			}
+			
+			// create new node and append into parent.
+			const tNode = maker.Make(document, change, false, true);
+			targetNodeParent.appendChild(tNode);
+			return;
+		}
+		
+		// create new node and replace node in parent.
+		const tNode = maker.Make(document, change, false, true);
+		dom.replaceNode(targetNode!.parentNode!, targetNode!, tNode);
+	});
+	return;
+}
+
+
+// JSONPatchTextComments runs the process of patching a corresponding text or comment node against
+export function JSONPatchTextComments(fragment: JSONNode, target: Node): void {
+	if (fragment.type !== COMMENT_NODE && fragment.type !== TEXT_NODE){
+		return;
+	}
+	
+	if (fragment.type !== COMMENT_NODE && fragment.type !== TEXT_NODE){
+		return;
+	}
+	
+	if (target.textContent === fragment.content){
+		return;
+	}
+	
+	target.textContent = fragment.content;
+	exts.Objects.PatchWith(target, '_ref', fragment.ref);
+	exts.Objects.PatchWith(target, '_tid', fragment.tid);
+	exts.Objects.PatchWith(target, '_atid', fragment.atid);
+}
+
+// PatchJSONAttributes runs the attribute patching of a target dom element
+// in comparison with a JSONNode.
+export function PatchJSONAttributes(node: JSONNode, target: Element): void {
+	const oldNodeAttrs: dom.Attributes = dom.recordAttributes(target!);
+	
+	node.attrs.forEach(function(attr) {
+		const oldValue = oldNodeAttrs[attr.Key];
+		
+		// delete attribute from oldNodeAttr map.
+		// Any attribute left in this map are ones
+		// the new node has no use of anymore, so
+		// we gotta remove it.
+		delete oldNodeAttrs[attr.Key];
+		
+		// if the value is the same, skip it.
+		if (attr.Value === oldValue){
+			return null;
+		}
+		
+		// get attribute and apply to giving node.
+		target.setAttribute(attr.Key, attr.Value);
+	});
+	
+	// Remove all attributes left in this map.
+	// New node did not update them, so we can remove them.
+	for(let index in oldNodeAttrs){
+		target.removeAttribute(index);
+	}
+	
+	// Patch attributes of id, tid, ref , atid and events.
+	// target.setAttribute("id", node.id);
+	target.setAttribute("_tid", node.tid);
+	target.setAttribute("_ref", node.ref);
+	target.setAttribute("_atid", node.atid);
+	target.setAttribute("events", BuildEvent(node.events));
+	
+	// Patch object itself to have id, ref, tid and atid values.
+	exts.Objects.PatchWith(target, '_id', node.id);
+	exts.Objects.PatchWith(target, '_ref', node.ref);
+	exts.Objects.PatchWith(target, '_tid', node.tid);
+	exts.Objects.PatchWith(target, '_atid', node.atid);
+}
+
+
 
 /*
 * PatchTree handles a general case algorithm with a simplified steps for handling
@@ -219,8 +656,8 @@ export function PatchTree(newFragment: Node, oldNodeOrMount: Node, dictator:Node
 		
 		// Since they are the same type or node, we check content if text and verify
 		// contents do not match, update and continue.
-		if (lastNode.nodeType == dom.TEXT_NODE  || lastNode.nodeType == dom.COMMENT_NODE){
-			if (lastNode.textContent != newNodeHandled.textContent) {
+		if (lastNode.nodeType === dom.TEXT_NODE  || lastNode.nodeType === dom.COMMENT_NODE){
+			if (lastNode.textContent !== newNodeHandled.textContent) {
 				lastNode.textContent = newNodeHandled.textContent;
 			}
 			continue;

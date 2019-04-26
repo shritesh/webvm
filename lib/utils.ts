@@ -20,7 +20,6 @@ export function has(map: object, property: string): boolean {
   return hasOwnProperty.call(map, property);
 }
 
-
 /**
  * Creates an map object without a prototype.
  */
@@ -29,7 +28,6 @@ export function createMap(): any {
   // tslint:disable-next-line:no-any
   return new (Blank as any)();
 }
-
 
 /**
  * Truncates an array, removing items up until length.

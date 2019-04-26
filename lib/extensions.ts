@@ -6,4 +6,17 @@ export namespace Objects {
   export function GetAttrWith(elem: any, attrName: string): any {
     return elem[attrName];
   }
+  
+  export function isNullOrUndefined(elem: any): boolean {
+    return elem === null || elem === undefined;
+  }
+  
+  export function isAny(elem: any, ...values: any): boolean {
+  	for(let index of values){
+  	  if (elem === index){
+  	    return true;
+      }
+    }
+  	return false;
+  }
 }

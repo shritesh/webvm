@@ -41,6 +41,114 @@ const getRootNode = Node.prototype.getRootNode || function () {
     }
     return prev;
 };
+function reverseCollectNodeWithBreadth(parent, matcher, matches) {
+    let cur = parent.lastChild;
+    while (cur) {
+        if (matcher(cur)) {
+            matches.push(cur);
+        }
+        cur = cur.previousSibling;
+    }
+}
+exports.reverseCollectNodeWithBreadth = reverseCollectNodeWithBreadth;
+function reverseFindNodeWithBreadth(parent, matcher) {
+    let cur = parent.lastChild;
+    while (cur) {
+        if (matcher(cur)) {
+            return cur;
+        }
+        cur = cur.previousSibling;
+    }
+    return null;
+}
+exports.reverseFindNodeWithBreadth = reverseFindNodeWithBreadth;
+function collectNodeWithBreadth(parent, matcher, matches) {
+    let cur = parent.firstChild;
+    if (matcher(cur)) {
+        matches.push(cur);
+    }
+    while (cur) {
+        if (matcher(cur.nextSibling)) {
+            matches.push(cur);
+        }
+        cur = cur.nextSibling;
+    }
+}
+exports.collectNodeWithBreadth = collectNodeWithBreadth;
+function collectNodeWithDepth(parent, matcher, matches) {
+    let cur = parent.firstChild;
+    while (cur) {
+        if (matcher(cur)) {
+            matches.push(cur);
+        }
+        cur = cur.firstChild;
+    }
+}
+exports.collectNodeWithDepth = collectNodeWithDepth;
+function findNodeWithBreadth(parent, matcher) {
+    let cur = parent.firstChild;
+    while (cur) {
+        if (matcher(cur)) {
+            return cur;
+        }
+        cur = cur.nextSibling;
+    }
+    return null;
+}
+exports.findNodeWithBreadth = findNodeWithBreadth;
+function findNodeWithDepth(parent, matcher) {
+    let cur = parent.firstChild;
+    while (cur) {
+        if (matcher(cur)) {
+            return cur;
+        }
+        cur = cur.firstChild;
+    }
+    return null;
+}
+exports.findNodeWithDepth = findNodeWithDepth;
+function findDepthFirst(parent, matcher) {
+    let cur = parent.firstChild;
+    while (cur) {
+        const found = findNodeWithDepth(cur, matcher);
+        if (found) {
+            return found;
+        }
+        cur = cur.nextSibling;
+    }
+    return null;
+}
+exports.findDepthFirst = findDepthFirst;
+function collectDepthFirst(parent, matcher, matches) {
+    let cur = parent.firstChild;
+    while (cur) {
+        collectNodeWithDepth(cur, matcher, matches);
+        cur = cur.nextSibling;
+    }
+    return;
+}
+exports.collectDepthFirst = collectDepthFirst;
+function findBreadthFirst(parent, matcher) {
+    let cur = parent.firstChild;
+    while (cur) {
+        const found = findNodeWithBreadth(cur, matcher);
+        if (found) {
+            return found;
+        }
+        cur = cur.firstChild;
+    }
+    return null;
+}
+exports.findBreadthFirst = findBreadthFirst;
+function collectBreadthFirst(parent, matcher, matches) {
+    let cur = parent.firstChild;
+    while (cur) {
+        collectNodeWithBreadth(cur, matcher, matches);
+        cur = cur.firstChild;
+    }
+    return;
+}
+exports.collectBreadthFirst = collectBreadthFirst;
 function getActiveElement(node) {
     const root = getRootNode.call(node);
     return isDocumentRoot(root) ? root.activeElement : null;
