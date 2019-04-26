@@ -139,7 +139,7 @@ module.exports = {
 
   // The glob patterns Jest uses to detect test files
   // testMatch: [
-  //   "**/__tests__/**/*.[jt]s?(x)",
+  //   "**/tests/**/*.[jt]s?(x)",
   //   "**/?(*.)+(spec|test).[tj]s?(x)"
   // ],
 
@@ -183,18 +183,18 @@ module.exports = {
   // Whether to use watchman for file crawling
   // watchman: true,
   // testEnvironment: 'node',
-  setupFilesAfterEnv: ['<rootDir>/__setup__/setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/inits/setup.ts'],
   roots: [
     "<rootDir>/lib",
     "<rootDir>/lib/extensions",
-    "<rootDir>/__tests__"
+    "<rootDir>/tests"
   ],
   transform: {
     "^.+\\.(t|j)sx?$": "ts-jest"
   },
   testMatch: [
-    "<rootDir>/__test__/**/*",
-    "**/__tests__/**/*.[jt]s?(x)",
+    "<rootDir>/tests/**/*",
+    "**/tests/**/*.[jt]s?(x)",
     "**/?(*.)+(spec|test).[tj]s?(x)"
   ],
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],

@@ -61,7 +61,7 @@ export function GetRAF(): RAF {
       return id;
     };
   
-  if (!window.cancelAnimationFrame) {
+  if (!mod.cancelAnimationFrame) {
     mod.cancelAnimationFrame = function(id: number): void {
       clearTimeout(id);
     };

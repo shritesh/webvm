@@ -12,7 +12,8 @@ export interface FrameRequestCallback {
 // sits on top of RequestAnimationFrame sequencing a set of Frames who control a set
 // of callbacks.
 //
-// Start AnimationQueue.bind/AnimationQueue.unbind.
+// Start -> AnimationQueue.bind
+// Stop -> AnimationQueue.unbind.
 //
 export class AnimationQueue {
 	public readonly frames: Array<AFrame>;
@@ -20,12 +21,14 @@ export class AnimationQueue {
 	private binded: boolean;
 	private requestAnimationID:number;
 	private rafProvider: rafPolyfill.RAF;
+	private readonly bindCycle: FrameRequestCallback;
 	
 	constructor(){
 		this.skip = false;
 		this.binded = false;
 		this.requestAnimationID = -1;
 		this.frames = new Array<AFrame>();
+		this.bindCycle = this.cycle.bind(this);
 		this.rafProvider = rafPolyfill.GetRAF();
 	}
 	
@@ -62,8 +65,7 @@ export class AnimationQueue {
 	
 	bind(){
 		if (this.binded) return null;
-		const bindCycle = this.cycle.bind(this);
-		this.requestAnimationID = this.rafProvider.requestAnimationFrame(bindCycle, null);
+		this.requestAnimationID = this.rafProvider.requestAnimationFrame(this.bindCycle, null);
 		this.binded = true;
 	}
 	

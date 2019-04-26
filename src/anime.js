@@ -7,6 +7,7 @@ class AnimationQueue {
         this.binded = false;
         this.requestAnimationID = -1;
         this.frames = new Array();
+        this.bindCycle = this.cycle.bind(this);
         this.rafProvider = rafPolyfill.GetRAF();
     }
     new() {
@@ -34,8 +35,7 @@ class AnimationQueue {
     bind() {
         if (this.binded)
             return null;
-        const bindCycle = this.cycle.bind(this);
-        this.requestAnimationID = this.rafProvider.requestAnimationFrame(bindCycle, null);
+        this.requestAnimationID = this.rafProvider.requestAnimationFrame(this.bindCycle, null);
         this.binded = true;
     }
     cycle(ms) {

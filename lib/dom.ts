@@ -1,4 +1,5 @@
 import {createMap, has, truncateArray, } from './utils';
+import * as exts from './extensions';
 
 // ELEMENT_NODE represents element node type value.
 export const ELEMENT_NODE = 1;
@@ -401,18 +402,6 @@ export function applyAttributeTyped(el: HTMLElement, name: string, value: {}) {
 }
 
 /**
- * A publicly mutable object to provide custom mutators for attributes.
- * NB: The result of createMap() has to be recast since closure compiler
- * will just assume attributes is "any" otherwise and throws away
- * the type annotation set by tsickle.
- */
-
-const symbols = {
-	default: '__default'
-};
-
-
-/**
  * Gets the namespace to create an element (of a given tag) in.
  */
 export function getNamespaceForTag(tag: string, parent: Node|null) {
@@ -511,14 +500,13 @@ export function createElement(doc: Document, nameOrCtor: NameOrCtorDef, key: Key
  */
 export function createText(doc: Document,  text: string|'', key: Key|''): Node {
 	const node = doc.createTextNode(text);
-	// node.key = key;
+	exts.Objects.PatchWith(node, 'key', key);
 	return node;
 }
 
 /**
  * Clears out any unvisited Nodes in a given range.
- * @param maybeParentNode
- * @param startNode The node to start clearing from, inclusive.
+ * @param fromNode
  * @param endNode The node to clear until, exclusive.
  */
 export function removeFromNode(fromNode: Node, endNode: Node|null) {
@@ -531,4 +519,83 @@ export function removeFromNode(fromNode: Node, endNode: Node|null) {
     child = next!;
   }
 }
+
+// /**
+//  * Aligns the virtual Node definition with the actual DOM, moving the
+//  * corresponding DOM node to the correct location or creating it if necessary.
+//  * @param nameOrCtor The name or constructor for the Node.
+//  * @param key The key used to identify the Node.
+//  */
+// function alignWithDOM(nameOrCtor: NameOrCtorDef, key: Key) {
+//   nextNode();
+//   const existingNode = getMatchingNode(currentNode, nameOrCtor, key);
+//   const node = existingNode || createNode(nameOrCtor, key);
+
+//   // If we are at the matching node, then we are done.
+//   if (node === currentNode) {
+//     return;
+//   }
+
+//   // Re-order the node into the right position, preserving focus if either
+//   // node or currentNode are focused by making sure that they are not detached
+//   // from the DOM.
+//   if (focusPath.indexOf(node) >= 0) {
+//     // Move everything else before the node.
+//     moveBefore(currentParent!, node, currentNode);
+//   } else {
+//     currentParent!.insertBefore(node, currentNode);
+//   }
+
+//   currentNode = node;
+// }
+
+
+// /**
+//  * Checks whether or not the current node matches the specified nameOrCtor and
+//  * key.
+//  * @param matchNode A node to match the data to.
+//  * @param nameOrCtor The name or constructor to check for.
+//  * @param key The key used to identify the Node.
+//  * @return True if the node matches, false otherwise.
+//  */
+// function matches(
+//     matchNode: Node, nameOrCtor: NameOrCtorDef, key: Key) {
+//   const data = getData(matchNode, key);
+
+//   // Key check is done using double equals as we want to treat a null key the
+//   // same as undefined. This should be okay as the only values allowed are
+//   // strings, null and undefined so the == semantics are not too weird.
+//   // tslint:disable-next-line:triple-equals
+//   return nameOrCtor == data.nameOrCtor && key == data.key;
+// }
+
+
+// /**
+//  * Finds the matching node, starting at `node` and looking at the subsequent
+//  * siblings if a key is used.
+//  * @param node The node to start looking at.
+//  * @param nameOrCtor The name or constructor for the Node.
+//  * @param key The key used to identify the Node.
+//  */
+// function getMatchingNode(
+//     matchNode: Node|null, nameOrCtor: NameOrCtorDef, key: Key): Node|null {
+//   if (!matchNode) {
+//     return null;
+//   }
+
+//   if (matches(matchNode, nameOrCtor, key)) {
+//     return matchNode;
+//   }
+
+//   if (key) {
+//     while ((matchNode = matchNode.nextSibling)) {
+//       if (matches(matchNode, nameOrCtor, key)) {
+//         return matchNode;
+//       }
+//     }
+//   }
+
+//   return null;
+// }
+
 

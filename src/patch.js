@@ -20,7 +20,7 @@ exports.DefaultJSONDictator = {
 exports.DefaultJSONMaker = {
     Make: (doc, descNode, staticRoot) => {
         let node;
-        if (descNode.namespace.length != 0) {
+        if (descNode.namespace.length !== 0) {
             node = doc.createElement(descNode.name);
         }
         else {
@@ -29,20 +29,25 @@ exports.DefaultJSONMaker = {
         return node;
     },
 };
-function PatchTreeByJSON(newFragment, oldFragment, dictator, maker) {
+function JSONPatchTree(fragment, mountOrLastParentNode, dictator, maker) {
 }
-exports.PatchTreeByJSON = PatchTreeByJSON;
-function PatchTree(newFragment, oldFragment, dictator) {
-    const rootNode = oldFragment.parentNode;
-    if (!dictator.Same(oldFragment, newFragment)) {
-        dom.replaceNode(rootNode, oldFragment, newFragment);
-        return null;
+exports.JSONPatchTree = JSONPatchTree;
+function JSONPartialPatchTree(fragment, mountOrLastParentNode, dictator, maker) {
+}
+exports.JSONPartialPatchTree = JSONPartialPatchTree;
+function PatchTree(newFragment, oldNodeOrMount, dictator, isChildRecursion) {
+    if (isChildRecursion) {
+        const rootNode = oldNodeOrMount.parentNode;
+        if (!dictator.Same(oldNodeOrMount, newFragment)) {
+            dom.replaceNode(rootNode, oldNodeOrMount, newFragment);
+            return null;
+        }
+        if (!oldNodeOrMount.hasChildNodes()) {
+            dom.replaceNode(rootNode, oldNodeOrMount, newFragment);
+            return null;
+        }
     }
-    if (!oldFragment.hasChildNodes()) {
-        dom.replaceNode(rootNode, oldFragment, newFragment);
-        return null;
-    }
-    const oldChildren = oldFragment.childNodes;
+    const oldChildren = oldNodeOrMount.childNodes;
     const oldChildrenLength = oldChildren.length;
     const newChildren = newFragment.childNodes;
     const newChildrenLength = newChildren.length;
@@ -59,7 +64,7 @@ function PatchTree(newFragment, oldFragment, dictator) {
         newNodeHandled = newChildren[lastIndex];
         lastNodeNextSibling = lastNode.nextSibling;
         if (!dictator.Same(lastNode, newNodeHandled)) {
-            dom.replaceNode(oldFragment, lastNode, newNodeHandled);
+            dom.replaceNode(oldNodeOrMount, lastNode, newNodeHandled);
             continue;
         }
         if (!dictator.Changed(lastNode, newNodeHandled)) {
@@ -72,18 +77,18 @@ function PatchTree(newFragment, oldFragment, dictator) {
             continue;
         }
         if (!lastNode.hasChildNodes() && newNodeHandled.hasChildNodes()) {
-            dom.replaceNode(oldFragment, lastNode, newNodeHandled);
+            dom.replaceNode(oldNodeOrMount, lastNode, newNodeHandled);
             continue;
         }
         if (lastNode.hasChildNodes() && !newNodeHandled.hasChildNodes()) {
-            dom.replaceNode(oldFragment, lastNode, newNodeHandled);
+            dom.replaceNode(oldNodeOrMount, lastNode, newNodeHandled);
             continue;
         }
         const lastElement = lastNode;
         const newElement = newNodeHandled;
         PatchAttributes(newElement, lastElement);
         lastElement.setAttribute("_patched", "true");
-        PatchTree(newElement, lastElement, dictator);
+        PatchTree(newElement, lastElement, dictator, true);
         lastElement.removeAttribute("_patched");
     }
     if (removeOldLeft && lastNodeNextSibling !== null) {
@@ -92,7 +97,7 @@ function PatchTree(newFragment, oldFragment, dictator) {
     }
     for (; lastIndex < newChildrenLength; lastIndex++) {
         const newNode = newChildren[lastIndex];
-        oldFragment.appendChild(newNode);
+        oldNodeOrMount.appendChild(newNode);
     }
 }
 exports.PatchTree = PatchTree;
@@ -102,7 +107,7 @@ function PatchAttributes(newElement, oldElement) {
         const attr = newElement.attributes[index];
         const oldValue = oldNodeAttrs[attr.name];
         delete oldNodeAttrs[attr.name];
-        if (attr.value == oldValue) {
+        if (attr.value === oldValue) {
             continue;
         }
         oldElement.setAttribute(attr.name, attr.value);

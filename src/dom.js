@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const utils_1 = require("./utils");
+const exts = require("./extensions");
 exports.ELEMENT_NODE = 1;
 exports.DOCUMENT_FRAGMENT_NODE = 11;
 exports.DOCUMENT_NODE = 9;
@@ -210,9 +211,6 @@ function applyAttributeTyped(el, name, value) {
     }
 }
 exports.applyAttributeTyped = applyAttributeTyped;
-const symbols = {
-    default: '__default'
-};
 function getNamespaceForTag(tag, parent) {
     if (tag === 'svg') {
         return 'http://www.w3.org/2000/svg';
@@ -274,6 +272,7 @@ function createElement(doc, nameOrCtor, key, content, attributes, namespace) {
 exports.createElement = createElement;
 function createText(doc, text, key) {
     const node = doc.createTextNode(text);
+    exts.Objects.PatchWith(node, 'key', key);
     return node;
 }
 exports.createText = createText;

@@ -1,5 +1,4 @@
-import * as webvm from '../lib/webvm';
-import { escapeRegExp } from 'tslint/lib/utils';
+import * as mount from '../lib/mount';
 
 describe("WebVM unit tests", function () {
 	it("Should be able to create a DOMMount for a dom node", function () {
@@ -11,7 +10,7 @@ describe("WebVM unit tests", function () {
 			'  <button id="button" />' +
 			'</div>';
 		
-		const elem = new webvm.DOMMount(document, '#username');
+		const elem = new mount.DOMMount(document, '#username');
 		expect(elem).toBeDefined();
 		expect(elem.mountNode).toBeDefined();
 		expect(elem.doc).toBeDefined();
