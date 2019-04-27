@@ -101,4 +101,90 @@ class AFrame {
     }
 }
 exports.AFrame = AFrame;
+class ChangeManager {
+    static drainTasks(q, wrapper) {
+        let task = q.shift();
+        while (task) {
+            if (wrapper !== null) {
+                wrapper(task);
+                task = q.shift();
+                continue;
+            }
+            task();
+            task = q.shift();
+        }
+    }
+    constructor(queue) {
+        this.reads = new Array();
+        this.writes = new Array();
+        this.readState = false;
+        this.inReadCall = false;
+        this.inWriteCall = false;
+        this.scheduled = false;
+        this.frame = queue.new();
+    }
+    mutate(fn) {
+        this.writes.push(fn);
+        this._schedule();
+    }
+    read(fn) {
+        this.reads.push(fn);
+        this._schedule();
+    }
+    _schedule() {
+        if (this.scheduled) {
+            return;
+        }
+        this.scheduled = true;
+        this.frame.add(this._runTasks.bind(this));
+    }
+    _runTasks() {
+        const readError = this._runReads();
+        if (readError !== null && readError !== undefined) {
+            this.scheduled = false;
+            this._schedule();
+            throw readError;
+        }
+        const writeError = this._runWrites();
+        if (writeError !== null && writeError !== undefined) {
+            this.scheduled = false;
+            this._schedule();
+            throw writeError;
+        }
+        if (this.reads.length > 0 || this.writes.length > 0) {
+            this.scheduled = false;
+            this._schedule();
+            return;
+        }
+        this.scheduled = false;
+    }
+    _runReads() {
+        try {
+            ChangeManager.drainTasks(this.reads, this._execReads.bind(this));
+        }
+        catch (e) {
+            return e;
+        }
+        return null;
+    }
+    _execReads(task) {
+        this.inReadCall = true;
+        task();
+        this.inReadCall = false;
+    }
+    _runWrites() {
+        try {
+            ChangeManager.drainTasks(this.writes, this._execWrite.bind(this));
+        }
+        catch (e) {
+            return e;
+        }
+        return null;
+    }
+    _execWrite(task) {
+        this.inWriteCall = true;
+        task();
+        this.inWriteCall = false;
+    }
+}
 //# sourceMappingURL=anime.js.map

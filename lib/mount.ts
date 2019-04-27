@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 
 /* DOMMount exists to provide a focus DOM operation on a giving underline static node,
 *  which will be used for mounting an ever updating series of changes, nodes and html elements.
@@ -13,12 +12,11 @@ export class DOMMount{
 	public readonly doc: Document;
 	public readonly mountNode: Element;
 	
-	
 	constructor(document: Document,target: string|Element){
 		this.doc = document;
 		
 		// if it's a string, then attempt using of document.querySelector
-		if(_.isString(target)){
+		if(typeof target === 'string'){
 			const targetSelector = target as string;
 			const node: Element = this.doc.querySelector(targetSelector)!;
 			if(node === null || node === undefined){

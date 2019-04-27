@@ -159,5 +159,151 @@ export class AFrame {
 	}
 }
 
+// Function defines an interface used to represent a function.
+export interface Function {
+	(): void
+}
 
+interface functionWrapper {
+	(Function): void
+}
+
+/**
+ * ChangeManager implements a read-mutation manager which queues up calls that
+ * only do reads together and executes them before executing calls that do
+ * mutations together. It is meant to help provide as much effect free functions
+ * and thinking in how we read and apply changes from elements as reading can
+ * greatly affect UI layout thrashing when not done right.
+ *
+ * ChangeManager implements the base mechanism to manage and coordinate read
+ * calls ensuring to execute as much read calls and write calls together
+ * ensuring to minimize the effects that can come when done at the same time
+ * or together in the context of UI or ever change values.
+ *
+ * ChangeManager uses a frame within an animation queue which relies on RAF
+ * to coordinate it's execution of read and write calls.
+ */
+class ChangeManager {
+	private readonly reads: Array<Function>;
+	private readonly writes: Array<Function>;
+	private readonly frame: AFrame;
+	
+	private readState: boolean;
+	private inReadCall: boolean;
+	private inWriteCall: boolean;
+	private scheduled: boolean;
+	
+	static drainTasks(q: Array<Function>, wrapper: functionWrapper): void {
+		let task: Function = q.shift()!;
+		while(task){
+			if (wrapper !== null){
+				wrapper(task);
+				task = q.shift()!;
+				continue;
+			}
+			
+			task();
+			task = q.shift()!;
+		}
+	}
+	
+	constructor(queue: AnimationQueue){
+		this.reads = new Array<Function>();
+		this.writes = new Array<Function>();
+		this.readState = false;
+		this.inReadCall = false;
+		this.inWriteCall = false;
+		this.scheduled = false;
+		this.frame = queue.new();
+	}
+	
+	mutate(fn: Function): void {
+		this.writes.push(fn);
+		this._schedule();
+	}
+	
+	read(fn: Function): void {
+		this.reads.push(fn);
+		this._schedule();
+	}
+	
+	_schedule(){
+		if(this.scheduled){
+			return;
+		}
+		
+		this.scheduled = true;
+		this.frame.add(this._runTasks.bind(this))
+	}
+	
+	/**
+	 * runTask contains needed logic to coordinate the
+	 * call to read and write.
+	 * @private
+	 */
+	_runTasks(){
+			// execute reads first.
+			const readError = this._runReads();
+			if (readError !== null && readError !== undefined){
+				
+				// schedule remaining tasks to execute.
+				this.scheduled = false;
+				this._schedule();
+				
+				// throw received error.
+				throw readError;
+			}
+			
+			// execute writes second.
+		const writeError = this._runWrites();
+		if (writeError !== null && writeError !== undefined){
+			
+			// schedule remaining tasks to execute.
+			this.scheduled = false;
+			this._schedule();
+			
+			// throw received error.
+			throw writeError;
+		}
+		
+		if (this.reads.length > 0 || this.writes.length > 0){
+			// schedule remaining tasks to execute.
+			this.scheduled = false;
+			this._schedule();
+			return;
+		}
+		
+		this.scheduled = false;
+	}
+	
+	_runReads(): Error|null {
+		try {
+			ChangeManager.drainTasks(this.reads, this._execReads.bind(this));
+		}catch(e){
+			return e;
+		}
+		return null;
+	}
+	
+	_execReads(task: Function): void {
+		this.inReadCall = true;
+		task();
+		this.inReadCall = false;
+	}
+	
+	_runWrites(): Error|null {
+		try {
+			ChangeManager.drainTasks(this.writes, this._execWrite.bind(this));
+		}catch(e){
+			return e;
+		}
+		return null;
+	}
+	
+	_execWrite(task: Function): void {
+		this.inWriteCall = true;
+		task();
+		this.inWriteCall = false;
+	}
+}
 
