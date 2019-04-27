@@ -10,7 +10,7 @@
     "ts-build": "npm run format && npm run build && npm run dist-unminified && npm run dist-minified",
     "dist-unminified": "npx browserify --standalone webvm --debug src/webvm.js -o dist/webvm.js",
     "dist-minified": "npx browserify --standalone webvm -p tinyify ./src/webvm.js -o ./dist/webvm.min.js",
-    "format": "npx prettier --write \"src/**/*.ts\" \"src/**/*.js\"",
+    "format": "npx prettier --write \"lib/**/*.ts\" \"src/**/*.js\"",
     "test": "jest",
     "prepare": "npm run ts-build",
     "prepublishOnly": "npm test && npm run lint",

@@ -1,12 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const now = (function () {
-    return performance.now ||
+    return (performance.now ||
         performance.mozNow ||
         performance.msNow ||
         performance.oNow ||
         performance.webkitNow ||
-        Date.now;
+        Date.now);
 })();
 const frameRate = 1000 / 60;
 const vendors = ['ms', 'moz', 'webkit', 'o'];
@@ -15,8 +15,8 @@ function GetRAF() {
     const mod = {};
     for (var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
         mod.requestAnimationFrame = window[vendors[x] + 'RequestAnimationFrame'];
-        mod.cancelAnimationFrame = window[vendors[x] + 'CancelAnimationFrame']
-            || window[vendors[x] + 'RequestCancelAnimationFrame'];
+        mod.cancelAnimationFrame =
+            window[vendors[x] + 'CancelAnimationFrame'] || window[vendors[x] + 'RequestCancelAnimationFrame'];
     }
     if (!mod.requestAnimationFrame || !mod.cancelAnimationFrame)
         mod.requestAnimationFrame = function (callback, element) {
@@ -27,7 +27,7 @@ function GetRAF() {
                     callback(currTime + timeToCall);
                 }
                 catch (e) {
-                    console.log("Error: ", e);
+                    console.log('Error: ', e);
                     setTimeout(function () {
                         throw e;
                     }, 0);

@@ -32,15 +32,16 @@ function getAncestry(node, root) {
     return ancestry;
 }
 exports.getAncestry = getAncestry;
-const getRootNode = Node.prototype.getRootNode || function () {
-    let cur = this;
-    let prev = cur;
-    while (cur) {
-        prev = cur;
-        cur = cur.parentNode;
-    }
-    return prev;
-};
+const getRootNode = Node.prototype.getRootNode ||
+    function () {
+        let cur = this;
+        let prev = cur;
+        while (cur) {
+            prev = cur;
+            cur = cur.parentNode;
+        }
+        return prev;
+    };
 function reverseCollectNodeWithBreadth(parent, matcher, matches) {
     let cur = parent.lastChild;
     while (cur) {
@@ -355,10 +356,10 @@ function createElement(doc, nameOrCtor, key, content, attributes, namespace) {
     namespace = namespace.trim();
     if (namespace.length > 0) {
         switch (nameOrCtor) {
-            case "svg":
+            case 'svg':
                 el = doc.createElementNS('http://www.w3.org/2000/svg', nameOrCtor);
                 break;
-            case "math":
+            case 'math':
                 el = doc.createElementNS('http://www.w3.org/1998/Math/MathML', nameOrCtor);
                 break;
             default:
@@ -368,7 +369,7 @@ function createElement(doc, nameOrCtor, key, content, attributes, namespace) {
     else {
         el = doc.createElement(nameOrCtor);
     }
-    el.setAttribute("_key", key);
+    el.setAttribute('_key', key);
     if (attributes) {
         applyAttrs(el, attributes);
     }

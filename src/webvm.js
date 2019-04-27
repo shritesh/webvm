@@ -8,22 +8,24 @@ const patch = require("./patch");
 const mount = require("./mount");
 const dom = require("./dom");
 const ws = require("./websocket");
-const tweens = require("./tween");
+const http = require("./http");
+const tweened = require("./tween");
 const inter = require("./interpolations");
-const fetch = require("whatwg-fetch");
-const promise = require("promise-polyfill");
+const fetch_1 = require("./fetch");
+const promise_1 = require("./promise");
 exports.default = {
     dom: dom,
     raf: raf,
-    fetch: fetch,
+    http: http,
     mount: mount,
     patch: patch,
     utils: utils,
     websocket: ws,
+    fetch: fetch_1.fetchAPI,
     extensions: exts,
-    promise: promise,
+    promise: promise_1.PromiseAPI.Promise,
     vfx: {
-        tween: tweens,
+        tween: tweened,
         animations: anime,
         interpolations: inter,
     },

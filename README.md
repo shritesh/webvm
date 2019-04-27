@@ -14,9 +14,13 @@ to extend and add more objects that wrap behaviours or capabilities for easier a
 
 WebVM goal is to be the sit in library that any project can include for the following purposes:
 
-- Efficient DOM diffing using html strings and JSON.
-- Easy interaction with RequestAnimationFrame for event loops.
-- Simple Event management using live events.
+- Efficient DOM diffing methods.
+- RequestAnimationFrame Loop management.
+- Dead Simple Event using live events.
+- DOMMount objects (Manages DOM Node update and patching) 
+- Promise Polyfills
+- Fetch Polyfills
+- HTTP Methods
 
 *An important things is WebVM exists to allow you easily take what already exists and extend it further 
 for your personal use.*

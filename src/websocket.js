@@ -21,6 +21,7 @@ class Socket {
             return;
         }
         if (this.attemptedConnects >= this.maxReconnect) {
+            this.reader.Exhausted(this);
             return;
         }
         const socket = new WebSocket(this.addr);
@@ -44,6 +45,7 @@ class Socket {
     }
     end() {
         this.userClosed = true;
+        this.reader.Closed(this);
         this.socket.close();
         this.socket = null;
     }
@@ -78,4 +80,5 @@ class Socket {
         this.reader.Message(event, this);
     }
 }
+exports.Socket = Socket;
 //# sourceMappingURL=websocket.js.map

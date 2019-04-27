@@ -9,7 +9,6 @@ const hasOwnProperty = Object.prototype.hasOwnProperty;
 export function Blank() {}
 Blank.prototype = Object.create(null);
 
-
 /**
  * Used to prevent property collisions between our "map" and its prototype.
  * @param map The map to check.
@@ -34,9 +33,8 @@ export function createMap(): any {
  * @param arr The array to truncate.
  * @param length The new length of the array.
  */
-export function truncateArray(arr: Array<{}|null|undefined>, length: number) {
+export function truncateArray(arr: Array<{} | null | undefined>, length: number) {
   while (arr.length > length) {
     arr.pop();
   }
 }
-

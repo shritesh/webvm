@@ -12,7 +12,7 @@ exports.DefaultNodeDictator = {
     },
 };
 function findElement(desc, parent) {
-    const selector = desc.name + "#" + desc.id;
+    const selector = desc.name + '#' + desc.id;
     const targets = parent.querySelectorAll(selector);
     if (targets.length === 0) {
         let attrSelector = desc.name + `[_tid='${desc.tid}']`;
@@ -34,13 +34,13 @@ function findElement(desc, parent) {
     const total = targets.length;
     for (let i = 0; i < total; i++) {
         const elem = targets.item(i);
-        if (elem.getAttribute("_tid") === desc.tid) {
+        if (elem.getAttribute('_tid') === desc.tid) {
             return elem;
         }
-        if (elem.getAttribute("_atid") === desc.atid) {
+        if (elem.getAttribute('_atid') === desc.atid) {
             return elem;
         }
-        if (elem.getAttribute("_ref") === desc.ref) {
+        if (elem.getAttribute('_ref') === desc.ref) {
             return elem;
         }
     }
@@ -48,16 +48,16 @@ function findElement(desc, parent) {
 }
 exports.findElement = findElement;
 function findElementbyRef(ref, parent) {
-    const ids = ref.split("/").map(function (elem) {
-        if (elem.trim() === "") {
-            return "";
+    const ids = ref.split('/').map(function (elem) {
+        if (elem.trim() === '') {
+            return '';
         }
-        return "#" + elem;
+        return '#' + elem;
     });
     if (ids.length === 0) {
         return null;
     }
-    if (ids[0] === "" || ids[0].trim() === "") {
+    if (ids[0] === '' || ids[0].trim() === '') {
         ids.shift();
     }
     const first = ids[0];
@@ -75,16 +75,16 @@ function findElementbyRef(ref, parent) {
 }
 exports.findElementbyRef = findElementbyRef;
 function findElementParentbyRef(ref, parent) {
-    const ids = ref.split("/").map(function (elem) {
-        if (elem.trim() === "") {
-            return "";
+    const ids = ref.split('/').map(function (elem) {
+        if (elem.trim() === '') {
+            return '';
         }
-        return "#" + elem;
+        return '#' + elem;
     });
     if (ids.length === 0) {
         return null;
     }
-    if (ids[0] === "" || ids[0].trim() === "") {
+    if (ids[0] === '' || ids[0].trim() === '') {
         ids.shift();
     }
     ids.pop();
@@ -141,16 +141,16 @@ function jsonMaker(doc, descNode, shallow, skipRemoved) {
     exts.Objects.PatchWith(node, '_ref', descNode.ref);
     exts.Objects.PatchWith(node, '_tid', descNode.tid);
     exts.Objects.PatchWith(node, '_atid', descNode.atid);
-    node.setAttribute("id", descNode.id);
-    node.setAttribute("_tid", descNode.tid);
-    node.setAttribute("_ref", descNode.ref);
-    node.setAttribute("_atid", descNode.atid);
-    node.setAttribute("events", BuildEvent(descNode.events));
+    node.setAttribute('id', descNode.id);
+    node.setAttribute('_tid', descNode.tid);
+    node.setAttribute('_ref', descNode.ref);
+    node.setAttribute('_atid', descNode.atid);
+    node.setAttribute('events', BuildEvent(descNode.events));
     descNode.attrs.forEach(function attrs(attr) {
         node.setAttribute(attr.Key, attr.Value);
     });
     if (descNode.removed) {
-        node.setAttribute("_removed", "true");
+        node.setAttribute('_removed', 'true');
         return node;
     }
     if (!shallow) {
@@ -167,10 +167,10 @@ exports.jsonMaker = jsonMaker;
 function BuildEvent(events) {
     const values = new Array();
     events.forEach(function attrs(attr) {
-        const eventName = attr.Name + "-" + (attr.PreventDefault ? "1" : "0") + (attr.StopPropagation ? "1" : "0");
+        const eventName = attr.Name + '-' + (attr.PreventDefault ? '1' : '0') + (attr.StopPropagation ? '1' : '0');
         values.push(eventName);
     });
-    return values.join(" ");
+    return values.join(' ');
 }
 exports.BuildEvent = BuildEvent;
 function JSONPatchTree(fragment, mount, dictator, maker) {
@@ -216,7 +216,8 @@ function JSONChangesPatch(fragment, mount, dictator, maker) {
     const changes = fragment.filter(function (elem) {
         return !elem.removed;
     });
-    fragment.filter(function (elem) {
+    fragment
+        .filter(function (elem) {
         if (!elem.removed) {
             return false;
         }
@@ -227,7 +228,8 @@ function JSONChangesPatch(fragment, mount, dictator, maker) {
             }
         });
         return filtered;
-    }).forEach(function (removal) {
+    })
+        .forEach(function (removal) {
         const target = findElement(removal, mount);
         if (target) {
             target.remove();
@@ -238,7 +240,7 @@ function JSONChangesPatch(fragment, mount, dictator, maker) {
         if (exts.Objects.isNullOrUndefined(targetNode)) {
             const targetNodeParent = findElementParentbyRef(change.ref, mount);
             if (exts.Objects.isNullOrUndefined(targetNodeParent)) {
-                console.log("Unable to apply new change stream: ", change);
+                console.log('Unable to apply new change stream: ', change);
                 return;
             }
             const tNode = maker.Make(document, change, false, true);
@@ -306,10 +308,10 @@ function PatchJSONAttributes(node, target) {
     for (let index in oldNodeAttrs) {
         target.removeAttribute(index);
     }
-    target.setAttribute("_tid", node.tid);
-    target.setAttribute("_ref", node.ref);
-    target.setAttribute("_atid", node.atid);
-    target.setAttribute("events", BuildEvent(node.events));
+    target.setAttribute('_tid', node.tid);
+    target.setAttribute('_ref', node.ref);
+    target.setAttribute('_atid', node.atid);
+    target.setAttribute('events', BuildEvent(node.events));
     exts.Objects.PatchWith(target, '_id', node.id);
     exts.Objects.PatchWith(target, '_ref', node.ref);
     exts.Objects.PatchWith(target, '_tid', node.tid);
@@ -332,7 +334,7 @@ function PatchTree(newFragment, oldNodeOrMount, dictator, isChildRecursion) {
     const oldChildrenLength = oldChildren.length;
     const newChildren = newFragment.childNodes;
     const newChildrenLength = newChildren.length;
-    const removeOldLeft = (newChildrenLength < oldChildrenLength);
+    const removeOldLeft = newChildrenLength < oldChildrenLength;
     let lastIndex = 0;
     let lastNode;
     let lastNodeNextSibling;
@@ -368,9 +370,9 @@ function PatchTree(newFragment, oldNodeOrMount, dictator, isChildRecursion) {
         const lastElement = lastNode;
         const newElement = newNodeHandled;
         PatchAttributes(newElement, lastElement);
-        lastElement.setAttribute("_patched", "true");
+        lastElement.setAttribute('_patched', 'true');
         PatchTree(newElement, lastElement, dictator, true);
-        lastElement.removeAttribute("_patched");
+        lastElement.removeAttribute('_patched');
     }
     if (removeOldLeft && lastNodeNextSibling !== null) {
         dom.removeFromNode(lastNodeNextSibling, null);
