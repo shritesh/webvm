@@ -173,29 +173,23 @@ function BuildEvent(events) {
     return values.join(" ");
 }
 exports.BuildEvent = BuildEvent;
-function JSONPatchTree(fragment, mount, dictator, maker, patched) {
-    if (exts.Objects.isNullOrUndefined(patched)) {
-        patched = {};
-    }
+function JSONPatchTree(fragment, mount, dictator, maker) {
     let targetNode = findElement(fragment, mount);
     if (exts.Objects.isNullOrUndefined(targetNode)) {
         const tNode = maker.Make(document, fragment, false, true);
-        patched[targetNode] = true;
         mount.appendChild(targetNode);
         return;
     }
-    PatchJSONNode(fragment, targetNode, dictator, maker, patched);
+    PatchJSONNode(fragment, targetNode, dictator, maker);
 }
 exports.JSONPatchTree = JSONPatchTree;
-function PatchJSONNode(fragment, targetNode, dictator, maker, patched) {
+function PatchJSONNode(fragment, targetNode, dictator, maker) {
     if (!dictator.Same(targetNode, fragment)) {
         const tNode = maker.Make(document, fragment, false, true);
-        patched[tNode] = true;
         dom.replaceNode(targetNode.parentNode, targetNode, tNode);
         return;
     }
     if (!dictator.Changed(targetNode, fragment)) {
-        patched[targetNode] = true;
         return;
     }
     PatchJSONAttributes(fragment, targetNode);
@@ -209,17 +203,16 @@ function PatchJSONNode(fragment, targetNode, dictator, maker, patched) {
             continue;
         }
         const childFragment = fragment.children[i];
-        PatchJSONNode(childFragment, childNode, dictator, maker, patched);
+        PatchJSONNode(childFragment, childNode, dictator, maker);
     }
     for (; i < fragmentKids; i++) {
         const tNode = maker.Make(document, fragment, false, true);
-        patched[tNode] = true;
         targetNode.appendChild(tNode);
     }
     return;
 }
 exports.PatchJSONNode = PatchJSONNode;
-function JSONPartialPatchTree(fragment, mount, dictator, maker) {
+function JSONChangesPatch(fragment, mount, dictator, maker) {
     const changes = fragment.filter(function (elem) {
         return !elem.removed;
     });
@@ -252,12 +245,38 @@ function JSONPartialPatchTree(fragment, mount, dictator, maker) {
             targetNodeParent.appendChild(tNode);
             return;
         }
-        const tNode = maker.Make(document, change, false, true);
-        dom.replaceNode(targetNode.parentNode, targetNode, tNode);
+        ApplyJSONNode(change, targetNode, dictator, maker);
     });
     return;
 }
-exports.JSONPartialPatchTree = JSONPartialPatchTree;
+exports.JSONChangesPatch = JSONChangesPatch;
+function ApplyJSONNode(fragment, targetNode, dictator, maker) {
+    if (!dictator.Same(targetNode, fragment)) {
+        const tNode = maker.Make(document, fragment, false, true);
+        dom.replaceNode(targetNode.parentNode, targetNode, tNode);
+        return;
+    }
+    if (dictator.Changed(targetNode, fragment)) {
+        PatchJSONAttributes(fragment, targetNode);
+    }
+    const totalKids = targetNode.childNodes.length;
+    const fragmentKids = fragment.children.length;
+    let i = 0;
+    for (; i < totalKids; i++) {
+        const childNode = targetNode.childNodes[i];
+        if (i >= fragmentKids) {
+            return;
+        }
+        const childFragment = fragment.children[i];
+        PatchJSONNode(childFragment, childNode, dictator, maker);
+    }
+    for (; i < fragmentKids; i++) {
+        const tNode = maker.Make(document, fragment, false, true);
+        targetNode.appendChild(tNode);
+    }
+    return;
+}
+exports.ApplyJSONNode = ApplyJSONNode;
 function JSONPatchTextComments(fragment, target) {
     if (fragment.type !== dom_1.COMMENT_NODE && fragment.type !== dom_1.TEXT_NODE) {
         return;
