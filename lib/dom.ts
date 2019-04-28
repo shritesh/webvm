@@ -303,8 +303,8 @@ export function findBreadthFirst(parent: Node, matcher: NodeMatcher): Node | nul
 
 // NodeFunction defines a function type which applies
 // a change to a node.
-export interface NodeFunction  {
-  (n:Node): void
+export interface NodeFunction {
+  (n: Node): void;
 }
 
 /**
@@ -314,9 +314,9 @@ export interface NodeFunction  {
  * @param parent parent node and tree to begin function apply.
  * @param fn function to apply against each node.
  */
-export function applyEachNode(parent: Node, fn: NodeFunction){
+export function applyEachNode(parent: Node, fn: NodeFunction) {
   fn(parent);
-  
+
   let cur: Node = parent.firstChild!;
   while (cur) {
     applyEachNode(cur.nextSibling!, fn);
@@ -331,13 +331,13 @@ export function applyEachNode(parent: Node, fn: NodeFunction){
  * @param parent parent node and tree to begin function apply.
  * @param fn function to apply against each node.
  */
-export function reverseApplyEachNode(parent: Node, fn: NodeFunction){
+export function reverseApplyEachNode(parent: Node, fn: NodeFunction) {
   let cur: Node = parent.lastChild!;
   while (cur) {
-  	reverseApplyEachNode(cur, fn);
+    reverseApplyEachNode(cur, fn);
     cur = cur.previousSibling!;
   }
-  
+
   fn(parent);
 }
 

@@ -6,13 +6,13 @@ import * as dom from './dom';
  * DOMChange defines a type which represent a string of html, a DocumentFragment containing
  *
  */
-export type DOMChange = string|DocumentFragment|patch.JSONNode;
+export type DOMChange = string | DocumentFragment | patch.JSONNode;
 
 /**
  * EventHandler defines a function interface type for handling events.
  */
 export interface EventHandler {
-  (e: Event): void
+  (e: Event): void;
 }
 
 /* DOMMount exists to provide a focus DOM operation on a giving underline static node,
@@ -32,7 +32,7 @@ export class DOMMount {
 
   constructor(document: Document, target: string | Element) {
     this.doc = document;
-    this.events = ({} as utils.KeyMap);
+    this.events = {} as utils.KeyMap;
     this.handler = this.handleEvent.bind(this);
 
     // if it's a string, then attempt using of document.querySelector
@@ -49,12 +49,9 @@ export class DOMMount {
 
     this.mountNode = target as Element;
   }
-  
-  
-  handleEvent(event: Event): void {
-    
-  }
-  
+
+  handleEvent(event: Event): void {}
+
   /**
    * applyPatch applies a DOM Change which either is a string of html,
    * DocumentFragment containing changes or a JSON Node which represent
@@ -68,31 +65,31 @@ export class DOMMount {
    * @param change the node change to be applied.
    */
   patch(change: DOMChange): void {
-    if (change instanceof DocumentFragment){
+    if (change instanceof DocumentFragment) {
       const fragment = change as DocumentFragment;
-      patch.PatchDOMTree(fragment, this.mountNode, patch.DefaultNodeDictator, false)
+      patch.PatchDOMTree(fragment, this.mountNode, patch.DefaultNodeDictator, false);
       this.registerNodeEvents(fragment);
       return;
     }
-    
-    if(typeof change === 'string'){
+
+    if (typeof change === 'string') {
       const node = document.createElement('div');
       node.innerHTML = change as string;
-      
-      patch.PatchDOMTree(node, this.mountNode, patch.DefaultNodeDictator, false)
+
+      patch.PatchDOMTree(node, this.mountNode, patch.DefaultNodeDictator, false);
       this.registerNodeEvents(node);
       return;
     }
-    
-    if(!patch.isJSONNode(change)){
+
+    if (!patch.isJSONNode(change)) {
       return;
     }
-    
+
     const node = change as patch.JSONNode;
     patch.PatchJSONNodeTree(node, this.mountNode, patch.DefaultJSONDictator, patch.DefaultJSONMaker);
     this.registerJSONNodeEvents(node);
   }
-  
+
   /**
    * patchList applies a array of DOM changes to be applied to the mount DOM.
    * It individually calls DOMMount.patch for each change.
@@ -102,7 +99,7 @@ export class DOMMount {
   patchList(changes: Array<DOMChange>): void {
     changes.forEach(this.patch.bind(this));
   }
-  
+
   /**
    * stream applies a string which should contain a array of JSONNode which will be
    * applied to the DOMMount node using DOMMount.streamList.
@@ -113,7 +110,7 @@ export class DOMMount {
     const nodes = JSON.parse(changes) as Array<patch.JSONNode>;
     return this.streamList(nodes);
   }
-  
+
   /***
    * streamList applies a list of JSONNode changes considered as partial changes
    * with no relation to their order, each is applied independently to the DOM,
@@ -132,56 +129,55 @@ export class DOMMount {
     patch.StreamJSONNodes(changes, this.mountNode, patch.DefaultJSONDictator, patch.DefaultJSONMaker);
     changes.forEach(this.registerJSONNodeEvents.bind(this));
   }
-  
+
   registerNodeEvents(node: Node): void {
     const binder = this;
     dom.applyEachNode(node, function(n: Node): void {
-      if (n.nodeType !== dom.ELEMENT_NODE){
+      if (n.nodeType !== dom.ELEMENT_NODE) {
         return;
       }
-      
+
       const elem = node as Element;
-      const events = elem.getAttribute("events")!;
-			events.split(" ").forEach(function(desc) {
-        const order = desc.split("-");
-        if (order.length === 2){
+      const events = elem.getAttribute('events')!;
+      events.split(' ').forEach(function(desc) {
+        const order = desc.split('-');
+        if (order.length === 2) {
           binder.registerEvent(order[0]);
         }
       });
     });
   }
-  
+
   registerJSONNodeEvents(node: patch.JSONNode): void {
     const binder = this;
     patch.applyJSONNodeFunction(node, function(n: patch.JSONNode): void {
-      if (n.removed){
+      if (n.removed) {
         n.events.forEach(function(desc) {
           binder.unregisterEvent(desc.Name);
         });
         return;
       }
-      
+
       n.events.forEach(function(desc) {
-          binder.registerEvent(desc.Name);
+        binder.registerEvent(desc.Name);
       });
     });
   }
-  
+
   registerEvent(eventName: string): void {
-    if(this.events[eventName]){
+    if (this.events[eventName]) {
       return;
     }
-    
+
     this.mountNode!.addEventListener(eventName, this.handler, true);
     this.events[eventName] = true;
   }
-  
+
   unregisterEvent(eventName: string): void {
-    if(!this.events[eventName]){
+    if (!this.events[eventName]) {
       return;
     }
     this.mountNode!.removeEventListener(eventName, this.handler, true);
     this.events[eventName] = false;
   }
 }
-

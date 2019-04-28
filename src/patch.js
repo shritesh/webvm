@@ -26,10 +26,10 @@ function applyJSONNodeKidsFunction(node, fn) {
 }
 exports.applyJSONNodeKidsFunction = applyJSONNodeKidsFunction;
 function isJSONNode(n) {
-    const hasID = typeof (n.id) !== 'undefined';
-    const hasRef = typeof (n.ref) !== 'undefined';
-    const hasTid = typeof (n.tid) !== 'undefined';
-    const hasTypeName = typeof (n.typeName) !== 'undefined';
+    const hasID = typeof n.id !== 'undefined';
+    const hasRef = typeof n.ref !== 'undefined';
+    const hasTid = typeof n.tid !== 'undefined';
+    const hasTypeName = typeof n.typeName !== 'undefined';
     return hasID && hasRef && hasTypeName && hasTid;
 }
 exports.isJSONNode = isJSONNode;

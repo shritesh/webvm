@@ -58,7 +58,7 @@ export interface JSONNode {
 // JSONNodeFunction defines a function interface for applying
 // a function to a JSONNode.
 export interface JSONNodeFunction {
-  (n: JSONNode): void
+  (n: JSONNode): void;
 }
 
 /**
@@ -71,7 +71,7 @@ export interface JSONNodeFunction {
 export function applyJSONNodeFunction(node: JSONNode, fn: JSONNodeFunction): void {
   fn(node);
   node.children.forEach(function(child) {
-  	applyJSONNodeFunction(child, fn);
+    applyJSONNodeFunction(child, fn);
   });
 }
 
@@ -95,10 +95,10 @@ export function applyJSONNodeKidsFunction(node: JSONNode, fn: JSONNodeFunction):
  * @param n
  */
 export function isJSONNode(n: any): n is JSONNode {
-  const hasID = typeof ((<JSONNode>n).id) !== 'undefined';
-  const hasRef = typeof ((<JSONNode>n).ref) !== 'undefined';
-  const hasTid = typeof ((<JSONNode>n).tid) !== 'undefined';
-  const hasTypeName = typeof ((<JSONNode>n).typeName) !== 'undefined';
+  const hasID = typeof (<JSONNode>n).id !== 'undefined';
+  const hasRef = typeof (<JSONNode>n).ref !== 'undefined';
+  const hasTid = typeof (<JSONNode>n).tid !== 'undefined';
+  const hasTypeName = typeof (<JSONNode>n).typeName !== 'undefined';
   return hasID && hasRef && hasTypeName && hasTid;
 }
 
@@ -566,7 +566,12 @@ export function StreamJSONNodes(
  * @param maker is used to create a new DOM node from a JSONNode.
  * @constructor
  */
-export function ApplyStreamNode(fragment: JSONNode, targetNode: Element, dictator: JSONDictator, maker: JSONMaker): void {
+export function ApplyStreamNode(
+  fragment: JSONNode,
+  targetNode: Element,
+  dictator: JSONDictator,
+  maker: JSONMaker,
+): void {
   // if we are not dealing with exactly the same node as fragment as far as the.
   // then dictator is concerned, then we must do a swap after creating node.
   if (!dictator.Same(targetNode, fragment)) {

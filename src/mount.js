@@ -18,8 +18,7 @@ class DOMMount {
         }
         this.mountNode = target;
     }
-    handleEvent(event) {
-    }
+    handleEvent(event) { }
     patch(change) {
         if (change instanceof DocumentFragment) {
             const fragment = change;
@@ -59,9 +58,9 @@ class DOMMount {
                 return;
             }
             const elem = node;
-            const events = elem.getAttribute("events");
-            events.split(" ").forEach(function (desc) {
-                const order = desc.split("-");
+            const events = elem.getAttribute('events');
+            events.split(' ').forEach(function (desc) {
+                const order = desc.split('-');
                 if (order.length === 2) {
                     binder.registerEvent(order[0]);
                 }
