@@ -55,6 +55,53 @@ export interface JSONNode {
   children: Array<JSONNode>; // children contains child node descriptions for giving root.
 }
 
+// JSONNodeFunction defines a function interface for applying
+// a function to a JSONNode.
+export interface JSONNodeFunction {
+  (n: JSONNode): void
+}
+
+/**
+ * applyJSONNodeFunction applies provided function to the json node and it's
+ * children list.
+ *
+ * @param node is the target JSONNode.
+ * @param fn is function to apply to JSONNode.
+ */
+export function applyJSONNodeFunction(node: JSONNode, fn: JSONNodeFunction): void {
+  fn(node);
+  node.children.forEach(function(child) {
+  	applyJSONNodeFunction(child, fn);
+  });
+}
+
+/**
+ * applyJSONNodeKidsFunction applies provided function to the json node children first
+ * then parent.
+ *
+ * @param node is the target JSONNode.
+ * @param fn is function to apply to JSONNode.
+ */
+export function applyJSONNodeKidsFunction(node: JSONNode, fn: JSONNodeFunction): void {
+  node.children.forEach(function(child) {
+    applyJSONNodeFunction(child, fn);
+  });
+  fn(node);
+}
+
+/**
+ * isJSONNode provides a type checker for verifying the type of n to be
+ * a JSONNode;
+ * @param n
+ */
+export function isJSONNode(n: any): n is JSONNode {
+  const hasID = typeof ((<JSONNode>n).id) !== 'undefined';
+  const hasRef = typeof ((<JSONNode>n).ref) !== 'undefined';
+  const hasTid = typeof ((<JSONNode>n).tid) !== 'undefined';
+  const hasTypeName = typeof ((<JSONNode>n).typeName) !== 'undefined';
+  return hasID && hasRef && hasTypeName && hasTid;
+}
+
 /**
  * findElement seeks giving DOMNode if available targeted by giving JSONNode in provided
  * parent
@@ -338,16 +385,16 @@ export type NodeTidMap = {
 };
 
 /**
- * JSONPatchTree handles a general case algorithm with a simplified steps for handling
+ * PatchJSONNodeTree handles a general case algorithm with a simplified steps for handling
  * tree patching and updating for a giving live node with that of a JSON description of
  * giving node changes.
  *
- * JSONPatchTree works with a whole DOM node or a DOM fragment, in that we mean a complete
+ * PatchJSONNodeTree works with a whole DOM node or a DOM fragment, in that we mean a complete
  * set of DOM nodes for both the old and new set, which matches the children to be updated.
  * The idea is when using this, you provide the static node where old nodes are mounted
  * and you use the JSON fragment to power the update.
  *
- * Consider using JSONChangesPatch to use a more stream or partial friendly update mechanism
+ * Consider using StreamJSONNodes to use a more stream or partial friendly update mechanism
  * which allows updating sparse parts of the DOM trees.
  *
  * Note: This function assumes the oldNodeOrMount for the initial call is either empty or
@@ -363,10 +410,9 @@ export type NodeTidMap = {
  * @param mount: A static node or last parent node which holds the target node for the giving JSON fragment.
  * @param dictator: Dictator helps us decide if the node is the same or changed.
  * @param maker: Maker helps create a real DOM node from a JSONNode.
- * @param patched: A map which contains nodes and tid's that where patched and updated.
  * @return
  **/
-export function JSONPatchTree(fragment: JSONNode, mount: Element, dictator: JSONDictator, maker: JSONMaker): void {
+export function PatchJSONNodeTree(fragment: JSONNode, mount: Element, dictator: JSONDictator, maker: JSONMaker): void {
   // Attempt to find the giving node within the mount, if we can't find it then add it as a new node.
   let targetNode: Element = findElement(fragment, mount)!;
   if (exts.Objects.isNullOrUndefined(targetNode)) {
@@ -384,13 +430,12 @@ export function JSONPatchTree(fragment: JSONNode, mount: Element, dictator: JSON
  * of that target node as well.
  *
  * Generally you should use PatchJSONNode if you wish to apply a JSONode change directly to the target node as
- * JSONPatchTree will first seek out the target node from the parent or mount node.
+ * PatchJSONNodeTree will first seek out the target node from the parent or mount node.
  *
  * @param fragment is the JSONNode containing change for giving target.
  * @param targetNode is the target DOM node to apply changes to.
  * @param dictator is used to decide the same-ness and change-ness state of target node.
  * @param maker is used to create a new DOM node from a JSONNode.
- * @param patched is used to track nodes which have being changed.
  * @constructor
  */
 export function PatchJSONNode(fragment: JSONNode, targetNode: Element, dictator: JSONDictator, maker: JSONMaker): void {
@@ -433,7 +478,7 @@ export function PatchJSONNode(fragment: JSONNode, targetNode: Element, dictator:
 }
 
 /**
- * JSONChangesPatch provides a change stream like patching mechanism which uses a array of incoming JSONNode changes
+ * StreamJSONNodes provides a change stream like patching mechanism which uses a array of incoming JSONNode changes
  * which arrangements have no connected correlation to the actual dom but will be treated as individual change stream which
  * will be used to locate the specific elements referenced by using their JSONNode.ref for tracking and update.
  *
@@ -443,7 +488,7 @@ export function PatchJSONNode(fragment: JSONNode, targetNode: Element, dictator:
  * @param maker
  * @constructor
  */
-export function JSONChangesPatch(
+export function StreamJSONNodes(
   fragment: Array<JSONNode>,
   mount: Element,
   dictator: JSONDictator,
@@ -500,13 +545,13 @@ export function JSONChangesPatch(
     // // create new node and replace node in parent.
     // const tNode = maker.Make(document, change, false, true);
     // dom.replaceNode(targetNode!.parentNode!, targetNode!, tNode);
-    ApplyJSONNode(change, targetNode!, dictator, maker);
+    ApplyStreamNode(change, targetNode!, dictator, maker);
   });
   return;
 }
 
 /**
- * ApplyJSONNode provides a DOM node patching approach for a giving JSON fragment and it's target DOM node.
+ * ApplyStreamNode provides a DOM node patching approach for a giving JSON fragment and it's target DOM node.
  * It recursively applies changes from the JSONNode to the target, it does not optimize by skipping nodes
  * which have not changed and their children but runs through the changes in the JSONNode till end.
  *
@@ -521,7 +566,7 @@ export function JSONChangesPatch(
  * @param maker is used to create a new DOM node from a JSONNode.
  * @constructor
  */
-export function ApplyJSONNode(fragment: JSONNode, targetNode: Element, dictator: JSONDictator, maker: JSONMaker): void {
+export function ApplyStreamNode(fragment: JSONNode, targetNode: Element, dictator: JSONDictator, maker: JSONMaker): void {
   // if we are not dealing with exactly the same node as fragment as far as the.
   // then dictator is concerned, then we must do a swap after creating node.
   if (!dictator.Same(targetNode, fragment)) {
@@ -557,8 +602,8 @@ export function ApplyJSONNode(fragment: JSONNode, targetNode: Element, dictator:
   return;
 }
 
-// JSONPatchTextComments runs the process of patching a corresponding text or comment node against
-export function JSONPatchTextComments(fragment: JSONNode, target: Node): void {
+// PatchTextCommentWithJSON runs the process of patching a corresponding text or comment node against
+export function PatchTextCommentWithJSON(fragment: JSONNode, target: Node): void {
   if (fragment.type !== COMMENT_NODE && fragment.type !== TEXT_NODE) {
     return;
   }
@@ -621,11 +666,11 @@ export function PatchJSONAttributes(node: JSONNode, target: Element): void {
 }
 
 /*
- * PatchTree handles a general case algorithm with a simplified steps for handling
- * tree patching and updating for a giving live node with that of new node loaded
- * into a document fragment.
+ * PatchDOMTree handles a general case algorithm with a simplified steps for handling
+ * tree patching and updating for a giving live node with that of new changes loaded
+ * into a document fragment or node.
  *
- * PatchTree works with a whole DOM node or a DOM fragment, in that we mean a complete
+ * PatchDOMTree works with a whole DOM node or a DOM fragment, in that we mean a complete
  * set of DOM nodes for both the old and new set, which matches the children to be updated.
  * The idea is when using this, you get the giving static node where old nodes are mounted
  * and you use a document fragment containing nodes changes for the new-fragment on the
@@ -644,7 +689,7 @@ export function PatchJSONAttributes(node: JSONNode, target: Element): void {
  * @param isChildRecursion: A bool which tells the patch algorithm that it is comparing inner nodes of roots.
  * @return
  **/
-export function PatchTree(
+export function PatchDOMTree(
   newFragment: Node,
   oldNodeOrMount: Node,
   dictator: NodeDictator,
@@ -730,14 +775,14 @@ export function PatchTree(
     const lastElement = lastNode as Element;
     const newElement = newNodeHandled as Element;
 
-    // PatchAttributes of giving element.
-    PatchAttributes(newElement, lastElement);
+    // PatchDOMAttributes of giving element.
+    PatchDOMAttributes(newElement, lastElement);
 
     // Add new attribute that says we've patched this already.
     lastElement.setAttribute('_patched', 'true');
 
     // Run Patching down the node set for giving element kids.
-    PatchTree(newElement, lastElement, dictator, true);
+    PatchDOMTree(newElement, lastElement, dictator, true);
 
     // Remove patched attribute that says we've patched this already.
     lastElement.removeAttribute('_patched');
@@ -757,9 +802,9 @@ export function PatchTree(
   }
 }
 
-// PatchAttributes runs the underline process to patch giving attributes
+// PatchDOMAttributes runs the underline process to patch giving attributes
 // of two elements.
-export function PatchAttributes(newElement: Element, oldElement: Element) {
+export function PatchDOMAttributes(newElement: Element, oldElement: Element) {
   const oldNodeAttrs: dom.Attributes = dom.recordAttributes(oldElement!);
 
   for (let index in newElement.attributes) {

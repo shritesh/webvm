@@ -11,6 +11,28 @@ exports.DefaultNodeDictator = {
         return false;
     },
 };
+function applyJSONNodeFunction(node, fn) {
+    fn(node);
+    node.children.forEach(function (child) {
+        applyJSONNodeFunction(child, fn);
+    });
+}
+exports.applyJSONNodeFunction = applyJSONNodeFunction;
+function applyJSONNodeKidsFunction(node, fn) {
+    node.children.forEach(function (child) {
+        applyJSONNodeFunction(child, fn);
+    });
+    fn(node);
+}
+exports.applyJSONNodeKidsFunction = applyJSONNodeKidsFunction;
+function isJSONNode(n) {
+    const hasID = typeof (n.id) !== 'undefined';
+    const hasRef = typeof (n.ref) !== 'undefined';
+    const hasTid = typeof (n.tid) !== 'undefined';
+    const hasTypeName = typeof (n.typeName) !== 'undefined';
+    return hasID && hasRef && hasTypeName && hasTid;
+}
+exports.isJSONNode = isJSONNode;
 function findElement(desc, parent) {
     const selector = desc.name + '#' + desc.id;
     const targets = parent.querySelectorAll(selector);
@@ -173,7 +195,7 @@ function BuildEvent(events) {
     return values.join(' ');
 }
 exports.BuildEvent = BuildEvent;
-function JSONPatchTree(fragment, mount, dictator, maker) {
+function PatchJSONNodeTree(fragment, mount, dictator, maker) {
     let targetNode = findElement(fragment, mount);
     if (exts.Objects.isNullOrUndefined(targetNode)) {
         const tNode = maker.Make(document, fragment, false, true);
@@ -182,7 +204,7 @@ function JSONPatchTree(fragment, mount, dictator, maker) {
     }
     PatchJSONNode(fragment, targetNode, dictator, maker);
 }
-exports.JSONPatchTree = JSONPatchTree;
+exports.PatchJSONNodeTree = PatchJSONNodeTree;
 function PatchJSONNode(fragment, targetNode, dictator, maker) {
     if (!dictator.Same(targetNode, fragment)) {
         const tNode = maker.Make(document, fragment, false, true);
@@ -212,7 +234,7 @@ function PatchJSONNode(fragment, targetNode, dictator, maker) {
     return;
 }
 exports.PatchJSONNode = PatchJSONNode;
-function JSONChangesPatch(fragment, mount, dictator, maker) {
+function StreamJSONNodes(fragment, mount, dictator, maker) {
     const changes = fragment.filter(function (elem) {
         return !elem.removed;
     });
@@ -247,12 +269,12 @@ function JSONChangesPatch(fragment, mount, dictator, maker) {
             targetNodeParent.appendChild(tNode);
             return;
         }
-        ApplyJSONNode(change, targetNode, dictator, maker);
+        ApplyStreamNode(change, targetNode, dictator, maker);
     });
     return;
 }
-exports.JSONChangesPatch = JSONChangesPatch;
-function ApplyJSONNode(fragment, targetNode, dictator, maker) {
+exports.StreamJSONNodes = StreamJSONNodes;
+function ApplyStreamNode(fragment, targetNode, dictator, maker) {
     if (!dictator.Same(targetNode, fragment)) {
         const tNode = maker.Make(document, fragment, false, true);
         dom.replaceNode(targetNode.parentNode, targetNode, tNode);
@@ -278,8 +300,8 @@ function ApplyJSONNode(fragment, targetNode, dictator, maker) {
     }
     return;
 }
-exports.ApplyJSONNode = ApplyJSONNode;
-function JSONPatchTextComments(fragment, target) {
+exports.ApplyStreamNode = ApplyStreamNode;
+function PatchTextCommentWithJSON(fragment, target) {
     if (fragment.type !== dom_1.COMMENT_NODE && fragment.type !== dom_1.TEXT_NODE) {
         return;
     }
@@ -294,7 +316,7 @@ function JSONPatchTextComments(fragment, target) {
     exts.Objects.PatchWith(target, '_tid', fragment.tid);
     exts.Objects.PatchWith(target, '_atid', fragment.atid);
 }
-exports.JSONPatchTextComments = JSONPatchTextComments;
+exports.PatchTextCommentWithJSON = PatchTextCommentWithJSON;
 function PatchJSONAttributes(node, target) {
     const oldNodeAttrs = dom.recordAttributes(target);
     node.attrs.forEach(function (attr) {
@@ -318,7 +340,7 @@ function PatchJSONAttributes(node, target) {
     exts.Objects.PatchWith(target, '_atid', node.atid);
 }
 exports.PatchJSONAttributes = PatchJSONAttributes;
-function PatchTree(newFragment, oldNodeOrMount, dictator, isChildRecursion) {
+function PatchDOMTree(newFragment, oldNodeOrMount, dictator, isChildRecursion) {
     if (isChildRecursion) {
         const rootNode = oldNodeOrMount.parentNode;
         if (!dictator.Same(oldNodeOrMount, newFragment)) {
@@ -369,9 +391,9 @@ function PatchTree(newFragment, oldNodeOrMount, dictator, isChildRecursion) {
         }
         const lastElement = lastNode;
         const newElement = newNodeHandled;
-        PatchAttributes(newElement, lastElement);
+        PatchDOMAttributes(newElement, lastElement);
         lastElement.setAttribute('_patched', 'true');
-        PatchTree(newElement, lastElement, dictator, true);
+        PatchDOMTree(newElement, lastElement, dictator, true);
         lastElement.removeAttribute('_patched');
     }
     if (removeOldLeft && lastNodeNextSibling !== null) {
@@ -383,8 +405,8 @@ function PatchTree(newFragment, oldNodeOrMount, dictator, isChildRecursion) {
         oldNodeOrMount.appendChild(newNode);
     }
 }
-exports.PatchTree = PatchTree;
-function PatchAttributes(newElement, oldElement) {
+exports.PatchDOMTree = PatchDOMTree;
+function PatchDOMAttributes(newElement, oldElement) {
     const oldNodeAttrs = dom.recordAttributes(oldElement);
     for (let index in newElement.attributes) {
         const attr = newElement.attributes[index];
@@ -399,5 +421,5 @@ function PatchAttributes(newElement, oldElement) {
         oldElement.removeAttribute(index);
     }
 }
-exports.PatchAttributes = PatchAttributes;
+exports.PatchDOMAttributes = PatchDOMAttributes;
 //# sourceMappingURL=patch.js.map

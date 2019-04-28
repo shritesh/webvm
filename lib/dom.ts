@@ -301,6 +301,46 @@ export function findBreadthFirst(parent: Node, matcher: NodeMatcher): Node | nul
   return null;
 }
 
+// NodeFunction defines a function type which applies
+// a change to a node.
+export interface NodeFunction  {
+  (n:Node): void
+}
+
+/**
+ * applyEachNode applies a giving function to a parent and it's children recursively
+ * down the tree in a depth first manner.
+ *
+ * @param parent parent node and tree to begin function apply.
+ * @param fn function to apply against each node.
+ */
+export function applyEachNode(parent: Node, fn: NodeFunction){
+  fn(parent);
+  
+  let cur: Node = parent.firstChild!;
+  while (cur) {
+    applyEachNode(cur.nextSibling!, fn);
+    cur = cur.nextSibling!;
+  }
+}
+
+/**
+ * reverseApplyEachNode applies a giving function to a child to parent.
+ * It'recursively applies function from down to up the tree.
+ *
+ * @param parent parent node and tree to begin function apply.
+ * @param fn function to apply against each node.
+ */
+export function reverseApplyEachNode(parent: Node, fn: NodeFunction){
+  let cur: Node = parent.lastChild!;
+  while (cur) {
+  	reverseApplyEachNode(cur, fn);
+    cur = cur.previousSibling!;
+  }
+  
+  fn(parent);
+}
+
 /**
  * collectBreadthFirst runs across giving parent node in a depth first manner where each
  * child node is search depth first for a matching node.

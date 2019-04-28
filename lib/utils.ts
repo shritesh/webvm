@@ -3,6 +3,11 @@
  */
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 
+// KeyMap defines a map type with string keys and boolean pairs.
+export type KeyMap = {
+  [x: string]: boolean;
+};
+
 /**
  * A constructor function that will create blank objects.
  */

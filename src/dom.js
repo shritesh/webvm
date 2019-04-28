@@ -141,6 +141,24 @@ function findBreadthFirst(parent, matcher) {
     return null;
 }
 exports.findBreadthFirst = findBreadthFirst;
+function applyEachNode(parent, fn) {
+    fn(parent);
+    let cur = parent.firstChild;
+    while (cur) {
+        applyEachNode(cur.nextSibling, fn);
+        cur = cur.nextSibling;
+    }
+}
+exports.applyEachNode = applyEachNode;
+function reverseApplyEachNode(parent, fn) {
+    let cur = parent.lastChild;
+    while (cur) {
+        reverseApplyEachNode(cur, fn);
+        cur = cur.previousSibling;
+    }
+    fn(parent);
+}
+exports.reverseApplyEachNode = reverseApplyEachNode;
 function collectBreadthFirst(parent, matcher, matches) {
     let cur = parent.firstChild;
     while (cur) {
