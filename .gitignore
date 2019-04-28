@@ -3,4 +3,5 @@
 *.exec
 *.log
 *.prof
+lib/*.js
 node_modules
