@@ -15,6 +15,17 @@ export interface EventHandler {
   (e: Event): void;
 }
 
+/**
+ * EventNotifier defines a function interface type for sending notification
+ * for the occurrence of an event for a giving node.
+ *
+ * Note the element and Node are the same object, but if giving node is not
+ * an Element then element would be null.
+ */
+export interface EventNotifier {
+  (e: Event, elem: Element|null): void;
+}
+
 /* DOMMount exists to provide a focus DOM operation on a giving underline static node,
  *  which will be used for mounting an ever updating series of changes, nodes and html elements.
  * It acts as the bridge for event management, propagation and update, just like in react, the mount
@@ -29,9 +40,11 @@ export class DOMMount {
   public readonly mountNode: Element;
   private readonly events: utils.KeyMap;
   private readonly handler: EventHandler;
+  private readonly notifier: EventNotifier;
 
-  constructor(document: Document, target: string | Element) {
+  constructor(document: Document, target: string | Element, notifier: EventNotifier) {
     this.doc = document;
+    this.notifier = notifier;
     this.events = {} as utils.KeyMap;
     this.handler = this.handleEvent.bind(this);
 
@@ -49,8 +62,43 @@ export class DOMMount {
 
     this.mountNode = target as Element;
   }
-
-  handleEvent(event: Event): void {}
+  
+  /**
+   * handleEvent handles the case of live events for the giving mount node.
+   * Events which reach this method would not continue propagation but are
+   * meant to be handled by this node if registered.
+   *
+   * If a event is not being handled or registered then it is allowed to propagate.
+   *
+   * @param event
+   */
+  handleEvent(event: Event): void {
+    if (!this.events[event.type]){
+      return;
+    }
+  
+    event.stopPropagation();
+    
+    const target = event.target as Node;
+    if(target.nodeType !== dom.ELEMENT_NODE){
+      return;
+    }
+  
+    const targetElement = (target as Element)!;
+    if (!targetElement.hasAttribute("events")){
+      return;
+    }
+    
+    const events = targetElement.getAttribute("events");
+    const filtered = events!.split(" ").filter(function(item: string) {
+      return item.startsWith(event.type);
+    });
+    
+    if (filtered.length === 0){
+      return;
+    }
+    this.notifier(event, targetElement);
+  }
 
   /**
    * applyPatch applies a DOM Change which either is a string of html,
@@ -141,8 +189,28 @@ export class DOMMount {
       const events = elem.getAttribute('events')!;
       events.split(' ').forEach(function(desc) {
         const order = desc.split('-');
-        if (order.length === 2) {
-          binder.registerEvent(order[0]);
+        if (order.length !== 2) {
+        }
+  
+        const eventName = order[0];
+        binder.registerEvent(eventName);
+        
+        // apply giving modifiers to ensure consistent behaviour for
+        // prevent default.
+        switch (order[1]) {
+	        case "01":
+          	// we need propagation for live events to work.
+            // node.addEventListener(eventName, MountNode.stopPropagation, false);
+            break;
+          case "10":
+            n.addEventListener(eventName, MountNode.preventDefault, false);
+            break;
+          case "11":
+            n.addEventListener(eventName, MountNode.preventDefault, false);
+  
+            // we need propagation for live events to work.
+            // node.addEventListener(eventName, MountNode.stopPropagation, false);
+          	break;
         }
       });
     });
@@ -179,5 +247,13 @@ export class DOMMount {
     }
     this.mountNode!.removeEventListener(eventName, this.handler, true);
     this.events[eventName] = false;
+  }
+  
+  static preventDefault(event): void {
+  	event.preventDefault();
+  }
+  
+  static stopPropagation(event): void {
+    event.stopPropagation();
   }
 }

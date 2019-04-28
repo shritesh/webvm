@@ -3,8 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const patch = require("./patch");
 const dom = require("./dom");
 class DOMMount {
-    constructor(document, target) {
+    constructor(document, target, notifier) {
         this.doc = document;
+        this.notifier = notifier;
         this.events = {};
         this.handler = this.handleEvent.bind(this);
         if (typeof target === 'string') {
@@ -18,7 +19,28 @@ class DOMMount {
         }
         this.mountNode = target;
     }
-    handleEvent(event) { }
+    handleEvent(event) {
+        if (!this.events[event.type]) {
+            return;
+        }
+        event.stopPropagation();
+        const target = event.target;
+        if (target.nodeType !== dom.ELEMENT_NODE) {
+            return;
+        }
+        const targetElement = target;
+        if (!targetElement.hasAttribute("events")) {
+            return;
+        }
+        const events = targetElement.getAttribute("events");
+        const filtered = events.split(" ").filter(function (item) {
+            return item.startsWith(event.type);
+        });
+        if (filtered.length === 0) {
+            return;
+        }
+        this.notifier(event, targetElement);
+    }
     patch(change) {
         if (change instanceof DocumentFragment) {
             const fragment = change;
@@ -61,8 +83,19 @@ class DOMMount {
             const events = elem.getAttribute('events');
             events.split(' ').forEach(function (desc) {
                 const order = desc.split('-');
-                if (order.length === 2) {
-                    binder.registerEvent(order[0]);
+                if (order.length !== 2) {
+                }
+                const eventName = order[0];
+                binder.registerEvent(eventName);
+                switch (order[1]) {
+                    case "01":
+                        break;
+                    case "10":
+                        n.addEventListener(eventName, MountNode.preventDefault, false);
+                        break;
+                    case "11":
+                        n.addEventListener(eventName, MountNode.preventDefault, false);
+                        break;
                 }
             });
         });
@@ -94,6 +127,12 @@ class DOMMount {
         }
         this.mountNode.removeEventListener(eventName, this.handler, true);
         this.events[eventName] = false;
+    }
+    static preventDefault(event) {
+        event.preventDefault();
+    }
+    static stopPropagation(event) {
+        event.stopPropagation();
     }
 }
 exports.DOMMount = DOMMount;
