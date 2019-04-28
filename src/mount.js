@@ -14,6 +14,8 @@ class DOMMount {
         }
         this.mountNode = target;
     }
+    update(changes) { }
+    stream(changes) { }
 }
 exports.DOMMount = DOMMount;
 //# sourceMappingURL=mount.js.map

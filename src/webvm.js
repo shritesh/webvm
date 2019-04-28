@@ -13,7 +13,7 @@ const tweened = require("./tween");
 const inter = require("./interpolations");
 const fetch_1 = require("./fetch");
 const promise_1 = require("./promise");
-exports.default = {
+exports.WebVM = {
     dom: dom,
     raf: raf,
     http: http,
@@ -30,4 +30,6 @@ exports.default = {
         interpolations: inter,
     },
 };
+self.WebVM = exports.WebVM;
+exports.default = exports.WebVM;
 //# sourceMappingURL=webvm.js.map

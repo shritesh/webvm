@@ -28,4 +28,7 @@ export class DOMMount {
 
     this.mountNode = target as Element;
   }
+
+  update(changes: any): void {}
+  stream(changes: any): void {}
 }

@@ -12,7 +12,7 @@ import * as inter from './interpolations';
 import { fetchAPI } from './fetch';
 import { PromiseAPI } from './promise';
 
-export default {
+export const WebVM = {
   dom: dom,
   raf: raf,
   http: http,
@@ -29,3 +29,8 @@ export default {
     interpolations: inter,
   },
 };
+
+// @ts-ignore
+self.WebVM = WebVM;
+
+export default WebVM;

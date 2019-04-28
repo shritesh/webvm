@@ -60,3 +60,80 @@ All typescript work is being done in the [lib](./lib) directory, which then have
 compiled into the [src](./src) directory. This allows anyone to pickup these files individually as they see fit. 
 
 With the build scripts, a single version can be generated into the [dist](./dist) directly for the browser.
+
+```bash
+.
+├── dist
+│   ├── index.html
+│   ├── webvm.js
+│   └── webvm.min.js
+├── inits
+│   ├── setup.js
+│   └── setup.ts
+├── jest.config.js
+├── lib
+│   ├── anime.js
+│   ├── anime.ts
+│   ├── doc.ts
+│   ├── dom.js
+│   ├── dom.ts
+│   ├── extensions.js
+│   ├── extensions.ts
+│   ├── fetch.ts
+│   ├── http.ts
+│   ├── interpolations.ts
+│   ├── mount.js
+│   ├── mount.ts
+│   ├── patch.js
+│   ├── patch.ts
+│   ├── promise.ts
+│   ├── raf-polyfill.js
+│   ├── raf-polyfill.ts
+│   ├── tween.ts
+│   ├── utils.js
+│   ├── utils.ts
+│   ├── websocket.ts
+│   ├── webvm.js
+│   └── webvm.ts
+├── package.json
+├── package-lock.json
+├── README.md
+├── src
+│   ├── anime.js
+│   ├── anime.js.map
+│   ├── doc.js
+│   ├── doc.js.map
+│   ├── dom.js
+│   ├── dom.js.map
+│   ├── extensions.js
+│   ├── extensions.js.map
+│   ├── fetch.js
+│   ├── fetch.js.map
+│   ├── http.js
+│   ├── http.js.map
+│   ├── interpolations.js
+│   ├── interpolations.js.map
+│   ├── mount.js
+│   ├── mount.js.map
+│   ├── patch.js
+│   ├── patch.js.map
+│   ├── promise.js
+│   ├── promise.js.map
+│   ├── raf-polyfill.js
+│   ├── raf-polyfill.js.map
+│   ├── tween.js
+│   ├── tween.js.map
+│   ├── utils.js
+│   ├── utils.js.map
+│   ├── websocket.js
+│   ├── websocket.js.map
+│   ├── webvm.js
+│   └── webvm.js.map
+├── tests
+│   ├── webvm.test.js
+│   └── webvm.test.ts
+├── tsconfig.json
+└── tslint.json
+
+5 directories, 66 files
+```
