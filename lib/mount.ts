@@ -23,7 +23,7 @@ export interface EventHandler {
  * an Element then element would be null.
  */
 export interface EventNotifier {
-  (e: Event, elem: Element|null): void;
+  (e: Event, elem: Element): void;
 }
 
 /* DOMMount exists to provide a focus DOM operation on a giving underline static node,

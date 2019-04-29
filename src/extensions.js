@@ -7,7 +7,7 @@ var Objects;
     }
     Objects.PatchWith = PatchWith;
     function GetAttrWith(elem, attrName) {
-        return elem[attrName];
+        return elem[attrName] || "";
     }
     Objects.GetAttrWith = GetAttrWith;
     function isNullOrUndefined(elem) {

@@ -5,7 +5,7 @@ import * as exts from './extensions';
 import { COMMENT_NODE, DOCUMENT_FRAGMENT_NODE, ELEMENT_NODE, TEXT_NODE } from './dom';
 
 // NodeDictator defines an interface type which exposes methods
-// that operate on DOM Npdes to patch into a patchTree process allowing
+// that operate on DOM Nodes to patch into a patchTree process allowing
 // the checks of a giving node if they are the same and changed.
 export interface NodeDictator {
   Same(n: Node, m: Node): boolean;
@@ -25,9 +25,60 @@ export const DefaultNodeDictator: NodeDictator = {
       return n.textContent === m.textContent;
     }
     
-    const mattrs = dom.recordAttributes(m as Element);
-    const nattrs = dom.recordAttributes(n as Element);
-    return !utils.isEqual(mattrs, nattrs);
+    var nTarget = n as Element;
+    var mTarget = m as Element;
+  
+    if (nTarget.hasAttribute("id") && !mTarget.hasAttribute("id")){
+    	return true;
+    }
+    
+    if (nTarget.hasAttribute("id") && mTarget.hasAttribute("id")){
+    	if (nTarget.getAttribute("id") !== mTarget.getAttribute("id")){
+    	  return true;
+      }
+    }
+  
+    if (nTarget.hasAttribute("_ref") && !mTarget.hasAttribute("_ref")){
+      return true;
+    }
+    
+    if (nTarget.hasAttribute("_ref") && mTarget.hasAttribute("_ref")){
+      if (nTarget.getAttribute("ref") !== mTarget.getAttribute("ref")){
+        return true;
+      }
+    }
+  
+    if (nTarget.hasAttribute("_tid") && !mTarget.hasAttribute("_tid")){
+      return true;
+    }
+    
+    if (nTarget.hasAttribute("_tid") && mTarget.hasAttribute("_tid")){
+      if (nTarget.getAttribute("_tid") !== mTarget.getAttribute("_tid")){
+        return true;
+      }
+    }
+    
+    if (nTarget.hasAttribute("_atid") && !mTarget.hasAttribute("_atid")){
+      return true;
+    }
+    
+    if (nTarget.hasAttribute("_atid") && mTarget.hasAttribute("_atid")){
+      if (nTarget.getAttribute("_atid") !== mTarget.getAttribute("_atid")){
+        return true;
+      }
+    }
+  
+    if (nTarget.hasAttribute("events") && !mTarget.hasAttribute("events")){
+      return true;
+    }
+    
+    if (nTarget.hasAttribute("events") && mTarget.hasAttribute("events")){
+      if (nTarget.getAttribute("events") !== mTarget.getAttribute("events")){
+        return true;
+      }
+    }
+    
+    return nTarget.innerHTML !== mTarget.innerHTML;
   },
 };
 
@@ -54,30 +105,45 @@ export const DefaultJSONDictator: JSONDictator = {
     }
     
     const tnode = n as Element;
-    const id = tnode.getAttribute("_id");
-    if (id !== m.id){
-      return true;
+    if (tnode.hasAttribute("id")){
+      const id = tnode.getAttribute("id");
+      if (id !== m.id){
+        return true;
+      }
     }
     
-    const ref = tnode.getAttribute("_ref");
-    if (ref !== m.ref){
-      return true;
+    if (tnode.hasAttribute("_ref")) {
+      const ref = tnode.getAttribute("_ref");
+      if (ref !== m.ref){
+        return true;
+      }
     }
     
     const tid = tnode.getAttribute("_tid");
     const atid = tnode.getAttribute("_atid");
   
-    if (tid !== m.tid && atid !== m.atid){
-      return true;
-    }
-    
-    if (tid !== m.tid && atid === m.atid){
-      return true;
+    if (tnode.hasAttribute("_tid")) {
+      if (tid !== m.tid){
+        return true;
+      }
+      
+      if (tnode.hasAttribute("_atid")){
+        if (tid !== m.tid && atid !== m.atid){
+          return true;
+        }
+  
+        if (tid !== m.tid && atid === m.atid){
+          return true;
+        }
+      }
     }
   
-    const mevents = BuildEvent(m.events);
-    const events = tnode.getAttribute("_events");
-    return mevents !== events;
+    if (tnode.hasAttribute("events")){
+      const mevents = BuildEvent(m.events);
+      return mevents !== tnode.getAttribute("_events");
+    }
+    
+    return true;
   },
 };
 
@@ -126,11 +192,14 @@ export interface JSONNodeFunction {
  * It recursively walks down the dom tree and generates giving node unless if
  * shallow is set to true.
  *
+ * If a node has no ID then a random one is generated for it.
+ *
  * @param node is a DOM node to transform info a JSONNode.
  * @param shallow is a flag if only the node itself without the children should be transformed.
+ * @param parentNode is the reference to the parent JSONNode if any.
  * @constructor
  */
-export function ToJSONNode(node: Node, shallow: boolean|false): JSONNode {
+export function ToJSONNode(node: Node, shallow: boolean|false, parentNode: JSONNode|null): JSONNode {
     const jnode = ({} as JSONNode);
     jnode.type = node.nodeType;
     jnode.name = node.nodeName;
@@ -162,18 +231,29 @@ export function ToJSONNode(node: Node, shallow: boolean|false): JSONNode {
     }
     
     if(exts.Objects.isNullOrUndefined(elem)){
+    	if (jnode.id === ""){
+    	  jnode.id = utils.RandomID();
+      }
     	return jnode;
     }
     
 		if (elem.hasAttribute("id")){
 			jnode.id = elem.getAttribute("id")!;
-		}
+		}else{
+      jnode.id = utils.RandomID();
+    }
+		
 		if (elem.hasAttribute("_ref")){
 			jnode.ref = elem.getAttribute("_ref")!;
-		}
+		}else{
+			if(!exts.Objects.isNullOrUndefined(parent) && jnode){
+			  jnode.ref = parentNode!.ref + "/" + jnode.id;
+      }
+    }
 		if (elem.hasAttribute("_tid")){
 			jnode.tid = elem.getAttribute("_tid")!;
 		}
+		
 		if (elem.hasAttribute("_atid")){
 			jnode.atid = elem.getAttribute("_atid")!;
 		}
@@ -186,7 +266,14 @@ export function ToJSONNode(node: Node, shallow: boolean|false): JSONNode {
 		  
 		if (!shallow){
       dom.eachNodeAndChild(node, function(child: Node) {
-        jnode.children.push(ToJSONNode(child, false));
+        const childElem = child as Element;
+        if (!exts.Objects.isNullOrUndefined(childElem)){
+          if (!childElem.hasAttribute("id")){
+            childElem.id = utils.RandomID();
+          }
+        }
+        
+        jnode.children.push(ToJSONNode(child, false, jnode));
       });
     }
 		
@@ -456,6 +543,10 @@ export function jsonMaker(
     exts.Objects.PatchWith(node, '_tid', descNode.tid);
     exts.Objects.PatchWith(node, '_atid', descNode.atid);
     return node;
+  }
+  
+  if (descNode.id === ""){
+    descNode.id = utils.RandomID();
   }
 
   let node: Element;

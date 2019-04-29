@@ -4,7 +4,7 @@ export namespace Objects {
   }
 
   export function GetAttrWith(elem: any, attrName: string): any {
-    return elem[attrName];
+    return elem[attrName] || "";
   }
 
   export function isNullOrUndefined(elem: any): boolean {

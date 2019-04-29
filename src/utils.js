@@ -18,6 +18,10 @@ function truncateArray(arr, length) {
     }
 }
 exports.truncateArray = truncateArray;
+function RandomID() {
+    return '_' + Math.random().toString(36).substr(2, 9);
+}
+exports.RandomID = RandomID;
 function isEqual(a, b) {
     const aProps = Object.getOwnPropertyNames(a);
     const bProps = Object.getOwnPropertyNames(b);

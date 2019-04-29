@@ -15,9 +15,49 @@ exports.DefaultNodeDictator = {
         if (n.nodeType === dom.COMMENT_NODE && m.nodeType === dom.COMMENT_NODE) {
             return n.textContent === m.textContent;
         }
-        const mattrs = dom.recordAttributes(m);
-        const nattrs = dom.recordAttributes(n);
-        return !utils.isEqual(mattrs, nattrs);
+        var nTarget = n;
+        var mTarget = m;
+        if (nTarget.hasAttribute("id") && !mTarget.hasAttribute("id")) {
+            return true;
+        }
+        if (nTarget.hasAttribute("id") && mTarget.hasAttribute("id")) {
+            if (nTarget.getAttribute("id") !== mTarget.getAttribute("id")) {
+                return true;
+            }
+        }
+        if (nTarget.hasAttribute("_ref") && !mTarget.hasAttribute("_ref")) {
+            return true;
+        }
+        if (nTarget.hasAttribute("_ref") && mTarget.hasAttribute("_ref")) {
+            if (nTarget.getAttribute("ref") !== mTarget.getAttribute("ref")) {
+                return true;
+            }
+        }
+        if (nTarget.hasAttribute("_tid") && !mTarget.hasAttribute("_tid")) {
+            return true;
+        }
+        if (nTarget.hasAttribute("_tid") && mTarget.hasAttribute("_tid")) {
+            if (nTarget.getAttribute("_tid") !== mTarget.getAttribute("_tid")) {
+                return true;
+            }
+        }
+        if (nTarget.hasAttribute("_atid") && !mTarget.hasAttribute("_atid")) {
+            return true;
+        }
+        if (nTarget.hasAttribute("_atid") && mTarget.hasAttribute("_atid")) {
+            if (nTarget.getAttribute("_atid") !== mTarget.getAttribute("_atid")) {
+                return true;
+            }
+        }
+        if (nTarget.hasAttribute("events") && !mTarget.hasAttribute("events")) {
+            return true;
+        }
+        if (nTarget.hasAttribute("events") && mTarget.hasAttribute("events")) {
+            if (nTarget.getAttribute("events") !== mTarget.getAttribute("events")) {
+                return true;
+            }
+        }
+        return nTarget.innerHTML !== mTarget.innerHTML;
     },
 };
 exports.DefaultJSONDictator = {
@@ -32,28 +72,41 @@ exports.DefaultJSONDictator = {
             return n.textContent !== m.content;
         }
         const tnode = n;
-        const id = tnode.getAttribute("_id");
-        if (id !== m.id) {
-            return true;
+        if (tnode.hasAttribute("id")) {
+            const id = tnode.getAttribute("id");
+            if (id !== m.id) {
+                return true;
+            }
         }
-        const ref = tnode.getAttribute("_ref");
-        if (ref !== m.ref) {
-            return true;
+        if (tnode.hasAttribute("_ref")) {
+            const ref = tnode.getAttribute("_ref");
+            if (ref !== m.ref) {
+                return true;
+            }
         }
         const tid = tnode.getAttribute("_tid");
         const atid = tnode.getAttribute("_atid");
-        if (tid !== m.tid && atid !== m.atid) {
-            return true;
+        if (tnode.hasAttribute("_tid")) {
+            if (tid !== m.tid) {
+                return true;
+            }
+            if (tnode.hasAttribute("_atid")) {
+                if (tid !== m.tid && atid !== m.atid) {
+                    return true;
+                }
+                if (tid !== m.tid && atid === m.atid) {
+                    return true;
+                }
+            }
         }
-        if (tid !== m.tid && atid === m.atid) {
-            return true;
+        if (tnode.hasAttribute("events")) {
+            const mevents = BuildEvent(m.events);
+            return mevents !== tnode.getAttribute("_events");
         }
-        const mevents = BuildEvent(m.events);
-        const events = tnode.getAttribute("_events");
-        return mevents !== events;
+        return true;
     },
 };
-function ToJSONNode(node, shallow) {
+function ToJSONNode(node, shallow, parentNode) {
     const jnode = {};
     jnode.type = node.nodeType;
     jnode.name = node.nodeName;
@@ -79,13 +132,24 @@ function ToJSONNode(node, shallow) {
             throw new Error(`unable to handle node type ${node.nodeType}`);
     }
     if (exts.Objects.isNullOrUndefined(elem)) {
+        if (jnode.id === "") {
+            jnode.id = utils.RandomID();
+        }
         return jnode;
     }
     if (elem.hasAttribute("id")) {
         jnode.id = elem.getAttribute("id");
     }
+    else {
+        jnode.id = utils.RandomID();
+    }
     if (elem.hasAttribute("_ref")) {
         jnode.ref = elem.getAttribute("_ref");
+    }
+    else {
+        if (!exts.Objects.isNullOrUndefined(parent) && jnode) {
+            jnode.ref = parentNode.ref + "/" + jnode.id;
+        }
     }
     if (elem.hasAttribute("_tid")) {
         jnode.tid = elem.getAttribute("_tid");
@@ -100,7 +164,13 @@ function ToJSONNode(node, shallow) {
     }
     if (!shallow) {
         dom.eachNodeAndChild(node, function (child) {
-            jnode.children.push(ToJSONNode(child, false));
+            const childElem = child;
+            if (!exts.Objects.isNullOrUndefined(childElem)) {
+                if (!childElem.hasAttribute("id")) {
+                    childElem.id = utils.RandomID();
+                }
+            }
+            jnode.children.push(ToJSONNode(child, false, jnode));
         });
     }
     return jnode;
@@ -258,6 +328,9 @@ function jsonMaker(doc, descNode, shallow, skipRemoved) {
         exts.Objects.PatchWith(node, '_tid', descNode.tid);
         exts.Objects.PatchWith(node, '_atid', descNode.atid);
         return node;
+    }
+    if (descNode.id === "") {
+        descNode.id = utils.RandomID();
     }
     let node;
     if (descNode.namespace.length !== 0) {
