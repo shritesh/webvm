@@ -47,12 +47,37 @@ export const DefaultJSONDictator: JSONDictator = {
   },
   Changed: (n: Node, m: JSONNode): boolean => {
     if (n.nodeType === dom.TEXT_NODE && m.type === dom.TEXT_NODE){
-      return n.textContent === m.content;
+      return n.textContent !== m.content;
     }
     if (n.nodeType === dom.COMMENT_NODE && m.type === dom.COMMENT_NODE){
-      return n.textContent === m.content;
+      return n.textContent !== m.content;
     }
-    return false;
+    
+    const tnode = n as Element;
+    const id = tnode.getAttribute("_id");
+    if (id !== m.id){
+      return true;
+    }
+    
+    const ref = tnode.getAttribute("_ref");
+    if (ref !== m.ref){
+      return true;
+    }
+    
+    const tid = tnode.getAttribute("_tid");
+    const atid = tnode.getAttribute("_atid");
+  
+    if (tid !== m.tid && atid !== m.atid){
+      return true;
+    }
+    
+    if (tid !== m.tid && atid === m.atid){
+      return true;
+    }
+  
+    const mevents = BuildEvent(m.events);
+    const events = tnode.getAttribute("_events");
+    return mevents !== events;
   },
 };
 
