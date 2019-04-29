@@ -395,13 +395,17 @@ function PatchJSONNode(fragment, targetNode, dictator, maker) {
         return;
     }
     PatchJSONAttributes(fragment, targetNode);
-    const totalKids = targetNode.childNodes.length;
+    const kids = dom.nodeListToArray(targetNode.childNodes);
+    const totalKids = kids.length;
     const fragmentKids = fragment.children.length;
     let i = 0;
     for (; i < totalKids; i++) {
-        const childNode = targetNode.childNodes[i];
+        const childNode = kids[i];
         if (i >= fragmentKids) {
-            childNode.remove();
+            const chnode = childNode;
+            if (chnode) {
+                chnode.remove();
+            }
             continue;
         }
         const childFragment = fragment.children[i];
@@ -532,45 +536,45 @@ function PatchDOMTree(newFragment, oldNodeOrMount, dictator, isChildRecursion) {
             return null;
         }
     }
-    const oldChildren = oldNodeOrMount.childNodes;
+    const newChildren = dom.nodeListToArray(newFragment.childNodes);
+    const oldChildren = dom.nodeListToArray(oldNodeOrMount.childNodes);
     const oldChildrenLength = oldChildren.length;
-    const newChildren = newFragment.childNodes;
     const newChildrenLength = newChildren.length;
     const removeOldLeft = newChildrenLength < oldChildrenLength;
     let lastIndex = 0;
     let lastNode;
+    let newChildNode;
     let lastNodeNextSibling;
-    let newNodeHandled;
     for (; lastIndex < oldChildrenLength; lastIndex++) {
         if (lastIndex >= newChildrenLength) {
             break;
         }
         lastNode = oldChildren[lastIndex];
-        newNodeHandled = newChildren[lastIndex];
+        newChildNode = newChildren[lastIndex];
         lastNodeNextSibling = lastNode.nextSibling;
-        if (!dictator.Same(lastNode, newNodeHandled)) {
-            dom.replaceNode(oldNodeOrMount, lastNode, newNodeHandled);
+        if (!dictator.Same(lastNode, newChildNode)) {
+            dom.replaceNode(oldNodeOrMount, lastNode, newChildNode);
             continue;
         }
-        if (!dictator.Changed(lastNode, newNodeHandled)) {
+        if (!dictator.Changed(lastNode, newChildNode)) {
             continue;
         }
         if (lastNode.nodeType === dom.TEXT_NODE || lastNode.nodeType === dom.COMMENT_NODE) {
-            if (lastNode.textContent !== newNodeHandled.textContent) {
-                lastNode.textContent = newNodeHandled.textContent;
+            if (lastNode.textContent !== newChildNode.textContent) {
+                lastNode.textContent = newChildNode.textContent;
             }
             continue;
         }
-        if (!lastNode.hasChildNodes() && newNodeHandled.hasChildNodes()) {
-            dom.replaceNode(oldNodeOrMount, lastNode, newNodeHandled);
+        if (!lastNode.hasChildNodes() && newChildNode.hasChildNodes()) {
+            dom.replaceNode(oldNodeOrMount, lastNode, newChildNode);
             continue;
         }
-        if (lastNode.hasChildNodes() && !newNodeHandled.hasChildNodes()) {
-            dom.replaceNode(oldNodeOrMount, lastNode, newNodeHandled);
+        if (lastNode.hasChildNodes() && !newChildNode.hasChildNodes()) {
+            dom.replaceNode(oldNodeOrMount, lastNode, newChildNode);
             continue;
         }
         const lastElement = lastNode;
-        const newElement = newNodeHandled;
+        const newElement = newChildNode;
         PatchDOMAttributes(newElement, lastElement);
         lastElement.setAttribute('_patched', 'true');
         PatchDOMTree(newElement, lastElement, dictator, true);
@@ -581,8 +585,10 @@ function PatchDOMTree(newFragment, oldNodeOrMount, dictator, isChildRecursion) {
         return null;
     }
     for (; lastIndex < newChildrenLength; lastIndex++) {
-        const newNode = newChildren[lastIndex];
-        oldNodeOrMount.appendChild(newNode);
+        let newNode = newChildren[lastIndex];
+        if (!exts.Objects.isNullOrUndefined(newNode)) {
+            oldNodeOrMount.appendChild(newNode);
+        }
     }
 }
 exports.PatchDOMTree = PatchDOMTree;

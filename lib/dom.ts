@@ -319,9 +319,27 @@ export function applyEachNode(parent: Node, fn: NodeFunction) {
 
   let cur: Node = parent.firstChild!;
   while (cur) {
-    applyEachNode(cur.nextSibling!, fn);
+		applyEachNode(cur, fn);
     cur = cur.nextSibling!;
   }
+}
+
+/**
+ * reverseApplyEachNode applies a giving function to a child to parent.
+ * It'recursively applies function from down to up the tree.
+ *
+ * @param parent parent node and tree to begin function apply.
+ * @param fn function to apply against each node.
+ */
+export function reverseApplyEachNode(parent: Node, fn: NodeFunction) {
+  let cur: Node = parent.lastChild!;
+  while (cur) {
+    reverseApplyEachNode(cur, fn);
+    fn(cur);
+    cur = cur.previousSibling!;
+  }
+  
+  fn(parent);
 }
 
 /**
@@ -340,6 +358,18 @@ export function eachChildAndNode(node: Node, fn: NodeFunction): void {
 }
 
 /**
+ * nodeListToArray returns a list of Nodes from a list NodeList.
+ * @param items
+ */
+export function nodeListToArray(items: NodeListOf<ChildNode>): Array<Node> {
+  const list = ([] as Array<Node>);
+  for (let i = 0; i < items.length; i++) {
+  	list.push(items[i]);
+  }
+  return list;
+}
+
+/**
  * eachNodeChild applies giving function to giving child nodes of
  * giving parent, applying the function to the node itself fist.
  *
@@ -355,22 +385,6 @@ export function eachNodeAndChild(node: Node, fn: NodeFunction): void {
 }
 
 
-/**
- * reverseApplyEachNode applies a giving function to a child to parent.
- * It'recursively applies function from down to up the tree.
- *
- * @param parent parent node and tree to begin function apply.
- * @param fn function to apply against each node.
- */
-export function reverseApplyEachNode(parent: Node, fn: NodeFunction) {
-  let cur: Node = parent.lastChild!;
-  while (cur) {
-    reverseApplyEachNode(cur, fn);
-    cur = cur.previousSibling!;
-  }
-
-  fn(parent);
-}
 
 /**
  * collectBreadthFirst runs across giving parent node in a depth first manner where each

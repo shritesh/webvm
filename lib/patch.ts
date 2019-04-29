@@ -689,14 +689,19 @@ export function PatchJSONNode(fragment: JSONNode, targetNode: Element, dictator:
   PatchJSONAttributes(fragment, targetNode);
 
   // Loop over children of giving node
-  const totalKids = targetNode.childNodes.length;
+  const kids = dom.nodeListToArray(targetNode.childNodes);
+  const totalKids = kids.length;
+  
   const fragmentKids = fragment.children.length;
 
   let i = 0;
   for (; i < totalKids; i++) {
-    const childNode = targetNode.childNodes[i];
+    const childNode = kids[i];
     if (i >= fragmentKids) {
-      childNode.remove();
+      const chnode = childNode as ChildNode;
+      if (chnode){
+        chnode.remove();
+      }
       continue;
     }
 
@@ -951,17 +956,19 @@ export function PatchDOMTree(
       return null;
     }
   }
-
-  const oldChildren = oldNodeOrMount.childNodes;
+  
+  const newChildren = dom.nodeListToArray(newFragment.childNodes);
+  const oldChildren = dom.nodeListToArray(oldNodeOrMount.childNodes);
+  
   const oldChildrenLength = oldChildren.length;
-  const newChildren = newFragment.childNodes;
   const newChildrenLength = newChildren.length;
   const removeOldLeft = newChildrenLength < oldChildrenLength;
 
   let lastIndex = 0;
   let lastNode: Node;
+  let newChildNode: Node;
   let lastNodeNextSibling: Node;
-  let newNodeHandled: Node;
+  
   for (; lastIndex < oldChildrenLength; lastIndex++) {
     // if we've reached the index point where the new nodes
     // parent has stopped, then break.
@@ -970,50 +977,50 @@ export function PatchDOMTree(
     }
 
     lastNode = oldChildren[lastIndex];
-    newNodeHandled = newChildren[lastIndex];
+    newChildNode = newChildren[lastIndex];
     lastNodeNextSibling = lastNode.nextSibling!;
 
     // if giving nodes are not the same, then replace them,
     // possible case is we are dealing with different node
     // types entirely.
-    if (!dictator.Same(lastNode, newNodeHandled)) {
-      dom.replaceNode(oldNodeOrMount, lastNode, newNodeHandled);
+    if (!dictator.Same(lastNode, newChildNode)) {
+      dom.replaceNode(oldNodeOrMount, lastNode, newChildNode);
       continue;
     }
 
     // if there was no actual change between nodes, then
     // skip this node and it's children as we see no reason
     // to go further down the rabbit hole.
-    if (!dictator.Changed(lastNode, newNodeHandled)) {
+    if (!dictator.Changed(lastNode, newChildNode)) {
       continue;
     }
 
     // Since they are the same type or node, we check content if text and verify
     // contents do not match, update and continue.
     if (lastNode.nodeType === dom.TEXT_NODE || lastNode.nodeType === dom.COMMENT_NODE) {
-      if (lastNode.textContent !== newNodeHandled.textContent) {
-        lastNode.textContent = newNodeHandled.textContent;
+      if (lastNode.textContent !== newChildNode.textContent) {
+        lastNode.textContent = newChildNode.textContent;
       }
       continue;
     }
 
     // if this giving node has no children but the new one has, no need
     // bothering to do attribute checks, just replace node.
-    if (!lastNode.hasChildNodes() && newNodeHandled.hasChildNodes()) {
-      dom.replaceNode(oldNodeOrMount, lastNode, newNodeHandled);
+    if (!lastNode.hasChildNodes() && newChildNode.hasChildNodes()) {
+      dom.replaceNode(oldNodeOrMount, lastNode, newChildNode);
       continue;
     }
-
+  
     // if old node has kids but we do not have children, then replace
     // no-need for further checks.
-    if (lastNode.hasChildNodes() && !newNodeHandled.hasChildNodes()) {
-      dom.replaceNode(oldNodeOrMount, lastNode, newNodeHandled);
+    if (lastNode.hasChildNodes() && !newChildNode.hasChildNodes()) {
+      dom.replaceNode(oldNodeOrMount, lastNode, newChildNode);
       continue;
     }
 
     const lastElement = lastNode as Element;
-    const newElement = newNodeHandled as Element;
-
+    const newElement = newChildNode as Element;
+    
     // PatchDOMAttributes of giving element.
     PatchDOMAttributes(newElement, lastElement);
 
@@ -1032,12 +1039,14 @@ export function PatchDOMTree(
     dom.removeFromNode(lastNodeNextSibling, null);
     return null;
   }
-
+  
   // Since we got here, it means the the new fragment has more children
   // than the parent.
   for (; lastIndex < newChildrenLength; lastIndex++) {
-    const newNode = newChildren[lastIndex];
-    oldNodeOrMount.appendChild(newNode);
+    let newNode = newChildren[lastIndex];
+    if(!exts.Objects.isNullOrUndefined(newNode)){
+      oldNodeOrMount.appendChild(newNode);
+    }
   }
 }
 

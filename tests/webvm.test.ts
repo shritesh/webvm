@@ -37,6 +37,27 @@ describe("WebVM unit tests", function () {
 		`;
 		
 		mounted.patch(newContent);
-		expect(mounted.mountNode.innerHTML).toBe(newContent);
+		expect(mounted.innerHTML()).toBe(newContent);
+		
+		const newContent2 = `
+			<div id="rack-table">
+				<div id="rack-item-2">
+						<span>Wrecker</span>
+				</div>
+				<div id="rack-item-3">
+						<span>Wrecker</span>
+				</div>
+				<div id="rack-item-1">
+						<span>Wrecker</span>
+				</div>
+				<div id="rack-item-4">
+						<span>Wrecker</span>
+				</div>
+			</div>
+		`;
+		
+		mounted.patch(newContent2);
+		expect(mounted.innerHTML()).toBe(newContent2);
+		// expect(mounted.innerHTML()).not.toBe(newContent);
 	});
 });

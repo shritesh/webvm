@@ -1,6 +1,7 @@
+import * as dom from './dom';
 import * as patch from './patch';
 import * as utils from './utils';
-import * as dom from './dom';
+import * as exts from './extensions';
 
 /**
  * DOMChange defines a type which represent a string of html, a DocumentFragment containing
@@ -195,28 +196,30 @@ export class DOMMount {
 
       const elem = node as Element;
       const events = elem.getAttribute('events')!;
-      events.split(' ').forEach(function(desc) {
-        const eventName = desc.substr(0, desc.length-3);
-        binder.registerEvent(eventName);
+      if (events){
+        events.split(' ').forEach(function(desc) {
+          const eventName = desc.substr(0, desc.length-3);
+          binder.registerEvent(eventName);
+    
+          // apply giving modifiers to ensure consistent behaviour for
+          // prevent default.
+          switch (desc.substr(desc.length-2, desc.length)) {
+            case "01":
+              // we need propagation for live events to work.
+              // node.addEventListener(eventName, MountNode.stopPropagation, false);
+              break;
+            case "10":
+              n.addEventListener(eventName, DOMMount.preventDefault, false);
+              break;
+            case "11":
+              n.addEventListener(eventName, DOMMount.preventDefault, false);
         
-        // apply giving modifiers to ensure consistent behaviour for
-        // prevent default.
-        switch (desc.substr(desc.length-2, desc.length)) {
-	        case "01":
-          	// we need propagation for live events to work.
-            // node.addEventListener(eventName, MountNode.stopPropagation, false);
-            break;
-          case "10":
-            n.addEventListener(eventName, DOMMount.preventDefault, false);
-            break;
-          case "11":
-            n.addEventListener(eventName, DOMMount.preventDefault, false);
-  
-            // we need propagation for live events to work.
-            // node.addEventListener(eventName, MountNode.stopPropagation, false);
-          	break;
-        }
-      });
+              // we need propagation for live events to work.
+              // node.addEventListener(eventName, MountNode.stopPropagation, false);
+              break;
+          }
+        });
+      }
     });
   }
 
@@ -235,6 +238,15 @@ export class DOMMount {
       });
     });
   }
+  
+  textContent(): string {
+    return this.mountNode.textContent!;
+  }
+  
+  innerHTML(): string {
+    return this.mountNode.innerHTML;
+  }
+  
 
   registerEvent(eventName: string): void {
     if (this.events[eventName]) {

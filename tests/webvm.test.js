@@ -15,6 +15,10 @@ describe("WebVM unit tests", function () {
         expect(mounted.mountNode).toBe(app);
         var newContent = "\n\t\t\t<div id=\"rack-table\">\n\t\t\t\t<div id=\"rack-item-1\">\n\t\t\t\t\t\t<span>Wrecker</span>\n\t\t\t\t</div>\n\t\t\t\t<div id=\"rack-item-2\">\n\t\t\t\t\t\t<span>Wrecker</span>\n\t\t\t\t</div>\n\t\t\t\t<div id=\"rack-item-3\">\n\t\t\t\t\t\t<span>Wrecker</span>\n\t\t\t\t</div>\n\t\t\t\t<div id=\"rack-item-4\">\n\t\t\t\t\t\t<span>Wrecker</span>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t";
         mounted.patch(newContent);
-        expect(mounted.mountNode.innerHTML).toBe(newContent);
+        expect(mounted.innerHTML()).toBe(newContent);
+        var newContent2 = "\n\t\t\t<div id=\"rack-table\">\n\t\t\t\t<div id=\"rack-item-2\">\n\t\t\t\t\t\t<span>Wrecker</span>\n\t\t\t\t</div>\n\t\t\t\t<div id=\"rack-item-3\">\n\t\t\t\t\t\t<span>Wrecker</span>\n\t\t\t\t</div>\n\t\t\t\t<div id=\"rack-item-1\">\n\t\t\t\t\t\t<span>Wrecker</span>\n\t\t\t\t</div>\n\t\t\t\t<div id=\"rack-item-4\">\n\t\t\t\t\t\t<span>Wrecker</span>\n\t\t\t\t</div>\n\t\t\t</div>\n\t\t";
+        mounted.patch(newContent2);
+        expect(mounted.innerHTML()).toBe(newContent2);
+        // expect(mounted.innerHTML()).not.toBe(newContent);
     });
 });

@@ -145,11 +145,21 @@ function applyEachNode(parent, fn) {
     fn(parent);
     let cur = parent.firstChild;
     while (cur) {
-        applyEachNode(cur.nextSibling, fn);
+        applyEachNode(cur, fn);
         cur = cur.nextSibling;
     }
 }
 exports.applyEachNode = applyEachNode;
+function reverseApplyEachNode(parent, fn) {
+    let cur = parent.lastChild;
+    while (cur) {
+        reverseApplyEachNode(cur, fn);
+        fn(cur);
+        cur = cur.previousSibling;
+    }
+    fn(parent);
+}
+exports.reverseApplyEachNode = reverseApplyEachNode;
 function eachChildAndNode(node, fn) {
     const list = node.childNodes;
     for (let i = 0; i < list.length; i++) {
@@ -158,6 +168,14 @@ function eachChildAndNode(node, fn) {
     fn(node);
 }
 exports.eachChildAndNode = eachChildAndNode;
+function nodeListToArray(items) {
+    const list = [];
+    for (let i = 0; i < items.length; i++) {
+        list.push(items[i]);
+    }
+    return list;
+}
+exports.nodeListToArray = nodeListToArray;
 function eachNodeAndChild(node, fn) {
     fn(node);
     const list = node.childNodes;
@@ -166,15 +184,6 @@ function eachNodeAndChild(node, fn) {
     }
 }
 exports.eachNodeAndChild = eachNodeAndChild;
-function reverseApplyEachNode(parent, fn) {
-    let cur = parent.lastChild;
-    while (cur) {
-        reverseApplyEachNode(cur, fn);
-        cur = cur.previousSibling;
-    }
-    fn(parent);
-}
-exports.reverseApplyEachNode = reverseApplyEachNode;
 function collectBreadthFirst(parent, matcher, matches) {
     let cur = parent.firstChild;
     while (cur) {

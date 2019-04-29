@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const patch = require("./patch");
 const dom = require("./dom");
+const patch = require("./patch");
 class DOMMount {
     constructor(document, target, notifier) {
         this.doc = document;
@@ -87,20 +87,22 @@ class DOMMount {
             }
             const elem = node;
             const events = elem.getAttribute('events');
-            events.split(' ').forEach(function (desc) {
-                const eventName = desc.substr(0, desc.length - 3);
-                binder.registerEvent(eventName);
-                switch (desc.substr(desc.length - 2, desc.length)) {
-                    case "01":
-                        break;
-                    case "10":
-                        n.addEventListener(eventName, DOMMount.preventDefault, false);
-                        break;
-                    case "11":
-                        n.addEventListener(eventName, DOMMount.preventDefault, false);
-                        break;
-                }
-            });
+            if (events) {
+                events.split(' ').forEach(function (desc) {
+                    const eventName = desc.substr(0, desc.length - 3);
+                    binder.registerEvent(eventName);
+                    switch (desc.substr(desc.length - 2, desc.length)) {
+                        case "01":
+                            break;
+                        case "10":
+                            n.addEventListener(eventName, DOMMount.preventDefault, false);
+                            break;
+                        case "11":
+                            n.addEventListener(eventName, DOMMount.preventDefault, false);
+                            break;
+                    }
+                });
+            }
         });
     }
     registerJSONNodeEvents(node) {
@@ -116,6 +118,12 @@ class DOMMount {
                 binder.registerEvent(desc.Name);
             });
         });
+    }
+    textContent() {
+        return this.mountNode.textContent;
+    }
+    innerHTML() {
+        return this.mountNode.innerHTML;
     }
     registerEvent(eventName) {
         if (this.events[eventName]) {

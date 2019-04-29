@@ -185,8 +185,6 @@ module.exports = {
   // testEnvironment: 'node',
   setupFilesAfterEnv: ['<rootDir>/inits/setup.ts'],
   roots: [
-    "<rootDir>/lib",
-    "<rootDir>/lib/extensions",
     "<rootDir>/tests"
   ],
   transform: {
@@ -194,8 +192,6 @@ module.exports = {
   },
   testMatch: [
     "<rootDir>/tests/**/*",
-    "**/tests/**/*.[jt]s?(x)",
-    "**/?(*.)+(spec|test).[tj]s?(x)"
   ],
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
 };
