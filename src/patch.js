@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const dom = require("./dom");
+const utils = require("./utils");
 const exts = require("./extensions");
 const dom_1 = require("./dom");
 exports.DefaultNodeDictator = {
@@ -8,9 +9,104 @@ exports.DefaultNodeDictator = {
         return n.nodeType == m.nodeType && n.nodeName == m.nodeName;
     },
     Changed: (n, m) => {
+        if (n.nodeType === dom.TEXT_NODE && m.nodeType === dom.TEXT_NODE) {
+            return n.textContent === m.textContent;
+        }
+        if (n.nodeType === dom.COMMENT_NODE && m.nodeType === dom.COMMENT_NODE) {
+            return n.textContent === m.textContent;
+        }
+        const mattrs = dom.recordAttributes(m);
+        const nattrs = dom.recordAttributes(n);
+        return !utils.isEqual(mattrs, nattrs);
+    },
+};
+exports.DefaultJSONDictator = {
+    Same: (n, m) => {
+        return n.nodeName === m.name && n.nodeType == m.type;
+    },
+    Changed: (n, m) => {
+        if (n.nodeType === dom.TEXT_NODE && m.type === dom.TEXT_NODE) {
+            return n.textContent === m.content;
+        }
+        if (n.nodeType === dom.COMMENT_NODE && m.type === dom.COMMENT_NODE) {
+            return n.textContent === m.content;
+        }
         return false;
     },
 };
+function ToJSONNode(node, shallow) {
+    const jnode = {};
+    jnode.type = node.nodeType;
+    jnode.name = node.nodeName;
+    jnode.id = exts.Objects.GetAttrWith(node, "_id");
+    jnode.tid = exts.Objects.GetAttrWith(node, "tid");
+    jnode.ref = exts.Objects.GetAttrWith(node, "_ref");
+    jnode.atid = exts.Objects.GetAttrWith(node, "_atid");
+    const elem = node;
+    jnode.tid = node._tid;
+    switch (node.nodeType) {
+        case dom_1.TEXT_NODE:
+            jnode.typeName = "Text";
+            jnode.content = node.textContent;
+            break;
+        case dom_1.COMMENT_NODE:
+            jnode.typeName = "Comment";
+            jnode.content = node.textContent;
+            break;
+        case dom_1.ELEMENT_NODE:
+            jnode.typeName = "Element";
+            break;
+        default:
+            throw new Error(`unable to handle node type ${node.nodeType}`);
+    }
+    if (exts.Objects.isNullOrUndefined(elem)) {
+        return jnode;
+    }
+    if (elem.hasAttribute("id")) {
+        jnode.id = elem.getAttribute("id");
+    }
+    if (elem.hasAttribute("_ref")) {
+        jnode.ref = elem.getAttribute("_ref");
+    }
+    if (elem.hasAttribute("_tid")) {
+        jnode.tid = elem.getAttribute("_tid");
+    }
+    if (elem.hasAttribute("_atid")) {
+        jnode.atid = elem.getAttribute("_atid");
+    }
+    if (elem.hasAttribute("events")) {
+        jnode.events = elem.getAttribute("events").split(" ").map(function (item) {
+            return JSONEvent(item);
+        });
+    }
+    if (!shallow) {
+        dom.eachNodeAndChild(node, function (child) {
+            jnode.children.push(ToJSONNode(child, false));
+        });
+    }
+    return jnode;
+}
+exports.ToJSONNode = ToJSONNode;
+function JSONEvent(eventDesc) {
+    const event = {};
+    event.Name = eventDesc.substr(0, eventDesc.length - 3);
+    switch (eventDesc.substr(eventDesc.length - 2, eventDesc.length)) {
+        case "00":
+            break;
+        case "01":
+            event.StopPropagation = true;
+            break;
+        case "10":
+            event.PreventDefault = true;
+            break;
+        case "11":
+            event.PreventDefault = true;
+            event.StopPropagation = true;
+            break;
+    }
+    return event;
+}
+exports.JSONEvent = JSONEvent;
 function applyJSONNodeFunction(node, fn) {
     fn(node);
     node.children.forEach(function (child) {
@@ -124,14 +220,6 @@ function findElementParentbyRef(ref, parent) {
     return cur;
 }
 exports.findElementParentbyRef = findElementParentbyRef;
-exports.DefaultJSONDictator = {
-    Same: (n, m) => {
-        return false;
-    },
-    Changed: (n, m) => {
-        return false;
-    },
-};
 exports.DefaultJSONMaker = {
     Make: jsonMaker,
 };

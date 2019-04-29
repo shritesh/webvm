@@ -150,6 +150,22 @@ function applyEachNode(parent, fn) {
     }
 }
 exports.applyEachNode = applyEachNode;
+function eachChildAndNode(node, fn) {
+    const list = node.childNodes;
+    for (let i = 0; i < list.length; i++) {
+        fn(list[i]);
+    }
+    fn(node);
+}
+exports.eachChildAndNode = eachChildAndNode;
+function eachNodeAndChild(node, fn) {
+    fn(node);
+    const list = node.childNodes;
+    for (let i = 0; i < list.length; i++) {
+        fn(list[i]);
+    }
+}
+exports.eachNodeAndChild = eachNodeAndChild;
 function reverseApplyEachNode(parent, fn) {
     let cur = parent.lastChild;
     while (cur) {

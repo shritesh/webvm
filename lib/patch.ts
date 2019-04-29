@@ -1,7 +1,8 @@
 import * as dom from './dom';
+import * as utils from './utils';
 import * as exts from './extensions';
 
-import { COMMENT_NODE, TEXT_NODE } from './dom';
+import { COMMENT_NODE, DOCUMENT_FRAGMENT_NODE, ELEMENT_NODE, TEXT_NODE } from './dom';
 
 // NodeDictator defines an interface type which exposes methods
 // that operate on DOM Npdes to patch into a patchTree process allowing
@@ -17,6 +18,40 @@ export const DefaultNodeDictator: NodeDictator = {
     return n.nodeType == m.nodeType && n.nodeName == m.nodeName;
   },
   Changed: (n: Node, m: Node): boolean => {
+    if (n.nodeType === dom.TEXT_NODE && m.nodeType === dom.TEXT_NODE){
+      return n.textContent === m.textContent;
+    }
+    if (n.nodeType === dom.COMMENT_NODE && m.nodeType === dom.COMMENT_NODE){
+      return n.textContent === m.textContent;
+    }
+    
+    const mattrs = dom.recordAttributes(m as Element);
+    const nattrs = dom.recordAttributes(n as Element);
+    return !utils.isEqual(mattrs, nattrs);
+  },
+};
+
+/*
+ * JSONDictator defines an interface which exposes method to verify
+ * the same and change state of a DOM node and a JSON node.
+ */
+export interface JSONDictator {
+  Same(n: Node, m: JSONNode): boolean;
+  Changed(n: Node, m: JSONNode): boolean;
+}
+
+// DefaultJSONDictator implements the JSONDictator interface.
+export const DefaultJSONDictator: JSONDictator = {
+  Same: (n: Node, m: JSONNode): boolean => {
+    return n.nodeName === m.name && n.nodeType == m.type;
+  },
+  Changed: (n: Node, m: JSONNode): boolean => {
+    if (n.nodeType === dom.TEXT_NODE && m.type === dom.TEXT_NODE){
+      return n.textContent === m.content;
+    }
+    if (n.nodeType === dom.COMMENT_NODE && m.type === dom.COMMENT_NODE){
+      return n.textContent === m.content;
+    }
     return false;
   },
 };
@@ -59,6 +94,107 @@ export interface JSONNode {
 // a function to a JSONNode.
 export interface JSONNodeFunction {
   (n: JSONNode): void;
+}
+
+/**
+ * ToJSONNode transforms a DOM node into a JSONNode description object.
+ * It recursively walks down the dom tree and generates giving node unless if
+ * shallow is set to true.
+ *
+ * @param node is a DOM node to transform info a JSONNode.
+ * @param shallow is a flag if only the node itself without the children should be transformed.
+ * @constructor
+ */
+export function ToJSONNode(node: Node, shallow: boolean|false): JSONNode {
+    const jnode = ({} as JSONNode);
+    jnode.type = node.nodeType;
+    jnode.name = node.nodeName;
+    
+		jnode.id = exts.Objects.GetAttrWith(node, "_id") as string;
+		jnode.tid = exts.Objects.GetAttrWith(node, "tid") as string;
+		jnode.ref = exts.Objects.GetAttrWith(node, "_ref") as string;
+		jnode.atid = exts.Objects.GetAttrWith(node, "_atid") as string;
+  
+		const elem = node as Element;
+  
+		// @ts-ignore
+		jnode.tid = node._tid;
+    
+    switch (node.nodeType){
+      case TEXT_NODE:
+        jnode.typeName = "Text";
+        jnode.content = node.textContent!;
+        break;
+      case COMMENT_NODE:
+        jnode.typeName = "Comment";
+        jnode.content = node.textContent!;
+        break;
+      case ELEMENT_NODE:
+        jnode.typeName = "Element";
+        break;
+      default:
+        throw new Error(`unable to handle node type ${node.nodeType}`);
+    }
+    
+    if(exts.Objects.isNullOrUndefined(elem)){
+    	return jnode;
+    }
+    
+		if (elem.hasAttribute("id")){
+			jnode.id = elem.getAttribute("id")!;
+		}
+		if (elem.hasAttribute("_ref")){
+			jnode.ref = elem.getAttribute("_ref")!;
+		}
+		if (elem.hasAttribute("_tid")){
+			jnode.tid = elem.getAttribute("_tid")!;
+		}
+		if (elem.hasAttribute("_atid")){
+			jnode.atid = elem.getAttribute("_atid")!;
+		}
+    
+		if (elem.hasAttribute("events")){
+		  jnode.events = elem.getAttribute("events")!.split(" ").map(function(item) {
+        return JSONEvent(item);
+      }) as Array<JSONEvent>;
+    }
+		  
+		if (!shallow){
+      dom.eachNodeAndChild(node, function(child: Node) {
+        jnode.children.push(ToJSONNode(child, false));
+      });
+    }
+		
+    return jnode;
+}
+
+/**
+ * JSONEvent returns an JSONEvent object for giving string describing
+ * an event subscription.
+ *
+ * @param eventDesc is the event string in JSONEvent format. <EventName>-<PreventDefaultBit><StopPropagationBit>.
+ * @constructor
+ */
+export function JSONEvent(eventDesc: string): JSONEvent {
+  const event = ({} as JSONEvent);
+  event.Name = eventDesc.substr(0, eventDesc.length - 3);
+  
+  // find event bits for prevent default and stop propagation.
+  switch (eventDesc.substr(eventDesc.length-2, eventDesc.length)) {
+    case "00":
+      break;
+    case "01":
+      event.StopPropagation = true;
+      break;
+    case "10":
+      event.PreventDefault = true;
+      break;
+    case "11":
+      event.PreventDefault = true;
+      event.StopPropagation = true;
+      break;
+  }
+  return event;
 }
 
 /**
@@ -250,24 +386,6 @@ export function findElementParentbyRef(ref: string, parent: Element): Element | 
   return cur;
 }
 
-/*
- * JSONDictator defines an interface which exposes method to verify
- * the same and change state of a DOM node and a JSON node.
- */
-export interface JSONDictator {
-  Same(n: Node, m: JSONNode): boolean;
-  Changed(n: Node, m: JSONNode): boolean;
-}
-
-// DefaultJSONDictator implements the JSONDictator interface.
-export const DefaultJSONDictator: JSONDictator = {
-  Same: (n: Node, m: JSONNode): boolean => {
-    return false;
-  },
-  Changed: (n: Node, m: JSONNode): boolean => {
-    return false;
-  },
-};
 
 // JSONMaker defines an interface which exposes a method to create
 // a DOM node from a JSON node.

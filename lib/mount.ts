@@ -113,28 +113,32 @@ export class DOMMount {
    * @param change the node change to be applied.
    */
   patch(change: DOMChange): void {
+  	this.patchWith(change, patch.DefaultNodeDictator, patch.DefaultJSONDictator, patch.DefaultJSONMaker);
+  }
+  
+  patchWith(change: DOMChange, nodeDictator: patch.NodeDictator, jsonDictator: patch.JSONDictator, jsonMaker: patch.JSONMaker): void {
     if (change instanceof DocumentFragment) {
       const fragment = change as DocumentFragment;
-      patch.PatchDOMTree(fragment, this.mountNode, patch.DefaultNodeDictator, false);
+      patch.PatchDOMTree(fragment, this.mountNode, nodeDictator, false);
       this.registerNodeEvents(fragment);
       return;
     }
-
+  
     if (typeof change === 'string') {
       const node = document.createElement('div');
       node.innerHTML = change as string;
-
-      patch.PatchDOMTree(node, this.mountNode, patch.DefaultNodeDictator, false);
+    
+      patch.PatchDOMTree(node, this.mountNode, nodeDictator, false);
       this.registerNodeEvents(node);
       return;
     }
-
+  
     if (!patch.isJSONNode(change)) {
       return;
     }
-
+  
     const node = change as patch.JSONNode;
-    patch.PatchJSONNodeTree(node, this.mountNode, patch.DefaultJSONDictator, patch.DefaultJSONMaker);
+    patch.PatchJSONNodeTree(node, this.mountNode, jsonDictator, jsonMaker);
     this.registerJSONNodeEvents(node);
   }
 
@@ -174,6 +178,10 @@ export class DOMMount {
    * @param changes is a array of JSONNodes to apply to the dom in static mount node.
    */
   streamList(changes: Array<patch.JSONNode>): void {
+  	this.streamListWith(changes, patch.DefaultJSONDictator, patch.DefaultJSONMaker);
+  }
+  
+  streamListWith(changes: Array<patch.JSONNode>, dictator: patch.JSONDictator, maker: patch.JSONMaker): void {
     patch.StreamJSONNodes(changes, this.mountNode, patch.DefaultJSONDictator, patch.DefaultJSONMaker);
     changes.forEach(this.registerJSONNodeEvents.bind(this));
   }
@@ -188,25 +196,21 @@ export class DOMMount {
       const elem = node as Element;
       const events = elem.getAttribute('events')!;
       events.split(' ').forEach(function(desc) {
-        const order = desc.split('-');
-        if (order.length !== 2) {
-        }
-  
-        const eventName = order[0];
+        const eventName = desc.substr(0, desc.length-3);
         binder.registerEvent(eventName);
         
         // apply giving modifiers to ensure consistent behaviour for
         // prevent default.
-        switch (order[1]) {
+        switch (desc.substr(desc.length-2, desc.length)) {
 	        case "01":
           	// we need propagation for live events to work.
             // node.addEventListener(eventName, MountNode.stopPropagation, false);
             break;
           case "10":
-            n.addEventListener(eventName, MountNode.preventDefault, false);
+            n.addEventListener(eventName, DOMMount.preventDefault, false);
             break;
           case "11":
-            n.addEventListener(eventName, MountNode.preventDefault, false);
+            n.addEventListener(eventName, DOMMount.preventDefault, false);
   
             // we need propagation for live events to work.
             // node.addEventListener(eventName, MountNode.stopPropagation, false);

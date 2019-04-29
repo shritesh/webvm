@@ -42,16 +42,19 @@ class DOMMount {
         this.notifier(event, targetElement);
     }
     patch(change) {
+        this.patchWith(change, patch.DefaultNodeDictator, patch.DefaultJSONDictator, patch.DefaultJSONMaker);
+    }
+    patchWith(change, nodeDictator, jsonDictator, jsonMaker) {
         if (change instanceof DocumentFragment) {
             const fragment = change;
-            patch.PatchDOMTree(fragment, this.mountNode, patch.DefaultNodeDictator, false);
+            patch.PatchDOMTree(fragment, this.mountNode, nodeDictator, false);
             this.registerNodeEvents(fragment);
             return;
         }
         if (typeof change === 'string') {
             const node = document.createElement('div');
             node.innerHTML = change;
-            patch.PatchDOMTree(node, this.mountNode, patch.DefaultNodeDictator, false);
+            patch.PatchDOMTree(node, this.mountNode, nodeDictator, false);
             this.registerNodeEvents(node);
             return;
         }
@@ -59,7 +62,7 @@ class DOMMount {
             return;
         }
         const node = change;
-        patch.PatchJSONNodeTree(node, this.mountNode, patch.DefaultJSONDictator, patch.DefaultJSONMaker);
+        patch.PatchJSONNodeTree(node, this.mountNode, jsonDictator, jsonMaker);
         this.registerJSONNodeEvents(node);
     }
     patchList(changes) {
@@ -70,6 +73,9 @@ class DOMMount {
         return this.streamList(nodes);
     }
     streamList(changes) {
+        this.streamListWith(changes, patch.DefaultJSONDictator, patch.DefaultJSONMaker);
+    }
+    streamListWith(changes, dictator, maker) {
         patch.StreamJSONNodes(changes, this.mountNode, patch.DefaultJSONDictator, patch.DefaultJSONMaker);
         changes.forEach(this.registerJSONNodeEvents.bind(this));
     }
@@ -82,19 +88,16 @@ class DOMMount {
             const elem = node;
             const events = elem.getAttribute('events');
             events.split(' ').forEach(function (desc) {
-                const order = desc.split('-');
-                if (order.length !== 2) {
-                }
-                const eventName = order[0];
+                const eventName = desc.substr(0, desc.length - 3);
                 binder.registerEvent(eventName);
-                switch (order[1]) {
+                switch (desc.substr(desc.length - 2, desc.length)) {
                     case "01":
                         break;
                     case "10":
-                        n.addEventListener(eventName, MountNode.preventDefault, false);
+                        n.addEventListener(eventName, DOMMount.preventDefault, false);
                         break;
                     case "11":
-                        n.addEventListener(eventName, MountNode.preventDefault, false);
+                        n.addEventListener(eventName, DOMMount.preventDefault, false);
                         break;
                 }
             });
